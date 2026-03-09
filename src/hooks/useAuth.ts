@@ -8,6 +8,7 @@ interface AuthState {
   session: Session | null
   profile: Profile | null
   loading: boolean
+  isNewUser: boolean
   signOut: () => Promise<void>
 }
 
@@ -16,14 +17,21 @@ export function useAuth(): AuthState {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isNewUser, setIsNewUser] = useState(false)
 
-  async function fetchProfile(userId: string) {
+  async function fetchProfile(authUser: User) {
     const { data } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('id', authUser.id)
       .single()
-    setProfile(data as Profile | null)
+    const p = data as Profile | null
+    setProfile(p)
+    // Detect first-time user: display_name still matches email prefix
+    if (p && authUser.email) {
+      const emailPrefix = authUser.email.split('@')[0]
+      setIsNewUser(p.display_name === emailPrefix)
+    }
   }
 
   useEffect(() => {
@@ -32,7 +40,7 @@ export function useAuth(): AuthState {
       setSession(s)
       setUser(s?.user ?? null)
       if (s?.user) {
-        fetchProfile(s.user.id).finally(() => setLoading(false))
+        fetchProfile(s.user).finally(() => setLoading(false))
       } else {
         setLoading(false)
       }
@@ -44,9 +52,10 @@ export function useAuth(): AuthState {
         setSession(s)
         setUser(s?.user ?? null)
         if (s?.user) {
-          fetchProfile(s.user.id)
+          fetchProfile(s.user)
         } else {
           setProfile(null)
+          setIsNewUser(false)
         }
       }
     )
@@ -58,5 +67,5 @@ export function useAuth(): AuthState {
     await supabase.auth.signOut()
   }
 
-  return { user, session, profile, loading, signOut }
+  return { user, session, profile, loading, isNewUser, signOut }
 }

@@ -1,34 +1,43 @@
 import { useState, useEffect } from 'react'
-import { useParams, Navigate } from 'react-router-dom'
+import { useParams, Navigate, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useCompletion } from '../hooks/useCompletion'
 import { useAuth } from '../hooks/useAuth'
+import { useFriends } from '../hooks/useFriends'
 import { calculateXp } from '../lib/calculateXp'
 import { ProgressDots } from '../components/reading/ProgressDots'
 import { PassageStep } from '../components/reading/PassageStep'
 import { QuestionStep } from '../components/reading/QuestionStep'
 import { CelebrationStep } from '../components/reading/CelebrationStep'
-import type { QuestDay, CompleteReadingResult } from '../types/database'
+import { FriendStreaksStep } from '../components/reading/FriendStreaksStep'
+import { ShareButton } from '../components/reading/ShareButton'
+import { Button } from '../components/ui/Button'
+import type { QuestDay, CompleteReadingResult, NewBadge } from '../types/database'
 
-// 5 steps total
-const TOTAL_STEPS = 5
-// Step indices
-const STEP_PASSAGE = 1
-const STEP_Q1 = 2
-const STEP_Q2 = 3
-const STEP_Q3 = 4
-const STEP_CELEBRATE = 5
+const STEP_PASSAGE    = 1
+const STEP_Q1         = 2
+const STEP_Q2         = 3
+const STEP_Q3         = 4
+const STEP_CELEBRATE  = 5
+const STEP_FRIENDS    = 6
+const STEP_DONE       = 7
 
 export function ReadingFlowPage() {
   const { questDayId } = useParams<{ questDayId: string }>()
+  const navigate = useNavigate()
   const { profile } = useAuth()
   const { submitCompletion, submitting } = useCompletion(questDayId)
+  const { friends } = useFriends()
+
+  const hasFriends = friends.length > 0
+  const TOTAL_STEPS = hasFriends ? 7 : 5
 
   const [step, setStep] = useState(STEP_PASSAGE)
   const [questDay, setQuestDay] = useState<QuestDay | null>(null)
   const [loadingDay, setLoadingDay] = useState(true)
   const [answers, setAnswers] = useState({ a1: '', a2: '', a3: '' })
   const [result, setResult] = useState<CompleteReadingResult | null>(null)
+  const [newBadges, setNewBadges] = useState<NewBadge[]>([])
   const [xpEarned] = useState(() => calculateXp(new Date()))
 
   useEffect(() => {
@@ -39,7 +48,7 @@ export function ReadingFlowPage() {
       .eq('id', questDayId)
       .single()
       .then(({ data }) => {
-        setQuestDay(data)
+        setQuestDay(data as QuestDay | null)
         setLoadingDay(false)
       })
   }, [questDayId])
@@ -65,30 +74,38 @@ export function ReadingFlowPage() {
         answer3: answers.a3,
       }, xpEarned)
       setResult(res)
-      setStep(STEP_CELEBRATE)
+      setNewBadges(res.new_badges ?? [])
     } catch {
-      // Already completed — still go to celebration
       setResult({
         new_streak: profile?.current_streak ?? 1,
         new_xp: profile?.total_xp ?? 0,
         new_level: profile?.level_title ?? 'Seedling',
+        new_badges: [],
       })
-      setStep(STEP_CELEBRATE)
+    }
+    setStep(STEP_CELEBRATE)
+  }
+
+  function handleCelebrationContinue() {
+    if (hasFriends) {
+      setStep(STEP_FRIENDS)
+    } else {
+      navigate('/', { replace: true })
     }
   }
 
-  const celebrationStreak = result?.new_streak ?? profile?.current_streak ?? 1
+  const celebrationStreak = result?.new_streak ?? (profile?.current_streak ?? 0) + 1
+  const dayNumber = questDay.day_number
 
   return (
     <div className="min-h-screen bg-tq-bg text-tq-text">
-      {/* Progress dots header — hidden on celebration */}
-      {step !== STEP_CELEBRATE && (
+      {/* Progress dots — visible only on reading steps */}
+      {step >= STEP_PASSAGE && step <= STEP_Q3 && (
         <div className="pt-6 px-4">
           <ProgressDots step={step} total={TOTAL_STEPS} />
         </div>
       )}
 
-      {/* Steps */}
       {step === STEP_PASSAGE && (
         <PassageStep
           questDay={questDay}
@@ -131,7 +148,49 @@ export function ReadingFlowPage() {
         <CelebrationStep
           streak={celebrationStreak}
           xpEarned={xpEarned}
+          questDay={questDay}
+          dayNumber={dayNumber}
+          answers={answers}
+          newBadges={newBadges}
+          onContinue={handleCelebrationContinue}
         />
+      )}
+
+      {step === STEP_FRIENDS && (
+        <FriendStreaksStep
+          questDayId={questDayId}
+          dayNumber={dayNumber}
+          passageReference={questDay.passage_reference ?? ''}
+          answers={answers}
+          streakCount={celebrationStreak}
+          onContinue={() => setStep(STEP_DONE)}
+        />
+      )}
+
+      {step === STEP_DONE && (
+        <div className="flex flex-col min-h-screen items-center justify-center px-6 py-12 text-center">
+          <div className="space-y-6 w-full max-w-xs">
+            <p className="text-5xl">🎉</p>
+            <h1 className="text-2xl font-extrabold text-tq-text">
+              {"You're done for today!"}
+            </h1>
+            <p className="text-tq-text-sec text-sm">
+              Great job showing up. See you tomorrow!
+            </p>
+            <div className="space-y-3 pt-2">
+              <ShareButton
+                dayNumber={dayNumber}
+                passageReference={questDay.passage_reference ?? ''}
+                answers={answers}
+                streakCount={celebrationStreak}
+                fullWidth
+              />
+              <Button fullWidth onClick={() => navigate('/', { replace: true })}>
+                Back to Home
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

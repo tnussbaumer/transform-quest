@@ -1,14 +1,17 @@
 import { useAuth } from '../hooks/useAuth'
 import { useProfile } from '../hooks/useProfile'
+import { useBadges } from '../hooks/useBadges'
 import { ProfileHeader } from '../components/profile/ProfileHeader'
 import { StatsGrid } from '../components/profile/StatsGrid'
 import { StreakCalendar } from '../components/profile/StreakCalendar'
+import { BadgesGrid } from '../components/profile/BadgesGrid'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 
 export function ProfilePage() {
   const { signOut } = useAuth()
   const { profile, completions, loading } = useProfile()
+  const { allBadges, earnedBadges } = useBadges()
 
   if (loading || !profile) {
     return (
@@ -29,6 +32,16 @@ export function ProfilePage() {
           Your Stats
         </h2>
         <StatsGrid profile={profile} passagesRead={completions.length} />
+      </section>
+
+      {/* Badges */}
+      <section aria-label="Badges">
+        <h2 className="text-xs font-extrabold uppercase tracking-widest text-tq-text-muted mb-3">
+          Badges
+        </h2>
+        <Card>
+          <BadgesGrid allBadges={allBadges} earnedBadges={earnedBadges} />
+        </Card>
       </section>
 
       {/* Streak Calendar */}

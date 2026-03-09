@@ -3,9 +3,11 @@ import { useAuth } from '../hooks/useAuth'
 import { useQuest } from '../hooks/useQuest'
 import { useCompletion } from '../hooks/useCompletion'
 import { useProfile } from '../hooks/useProfile'
+import { useFriends } from '../hooks/useFriends'
 import { TodaysReadingCard } from '../components/home/TodaysReadingCard'
 import { WeeklyStreakBar } from '../components/home/WeeklyStreakBar'
 import { QuickStatsRow } from '../components/home/QuickStatsRow'
+import { FriendActivitySnippet } from '../components/home/FriendActivitySnippet'
 import { Card } from '../components/ui/Card'
 
 export function HomePage() {
@@ -13,6 +15,7 @@ export function HomePage() {
   const { quest, questDay, dayNumber, totalDays, loading: questLoading } = useQuest()
   const { isCompletedToday, loading: completionLoading } = useCompletion(questDay?.id)
   const { completions, profile: fullProfile } = useProfile()
+  const { friends } = useFriends()
 
   const displayName = profile?.display_name ?? 'friend'
   const streak = fullProfile?.current_streak ?? profile?.current_streak ?? 0
@@ -80,6 +83,9 @@ export function HomePage() {
           totalDays={totalDays}
         />
       )}
+
+      {/* Friend Activity */}
+      <FriendActivitySnippet friends={friends} />
     </div>
   )
 }
