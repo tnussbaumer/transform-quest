@@ -2,7 +2,7 @@
 
 > **This is the living reference document for the project.** Update it whenever the app's state meaningfully changes. Use it to orient any new Claude session, onboard collaborators, or remind yourself where things stand.
 
-*Last updated: March 9, 2026 — Phase 1 complete, build passing, awaiting Supabase project setup.*
+*Last updated: March 9, 2026 — Phase 2 complete, build passing (469KB JS). Awaiting Supabase project setup + migration 003.*
 
 ---
 
@@ -35,29 +35,42 @@ A gamified daily Bible reading PWA for Transform Church youth (ages 11–18) in 
 
 ## 3. CURRENT PHASE STATUS
 
-### ✅ Phase 1 — MVP (COMPLETE, build passing)
-`npm run build` → clean TypeScript compile + Vite build → 437KB JS, 17KB CSS, PWA service worker.
+### ✅ Phase 1 — MVP (COMPLETE)
+- Project scaffold, Tailwind config, PWA manifest
+- Supabase SQL migrations + auth trigger + seed data (all 30 Matthew passages now filled in)
+- Auth flow (magic link + Google OAuth, protected routes, first-time user auto-redirect)
+- Onboarding (set display name on first sign-in)
+- App shell (bottom nav, layout, routing)
+- Home screen (today's card, weekly streak bar, stats row, friend activity snippet)
+- Reading & reflection flow (writes to Supabase via RPC)
+- XP & streak calculation (server-side atomic RPC)
+- Profile screen (stats grid, streak calendar, badges grid, sign out)
+- Quests tab (active quest card + progress bar)
+- PWA icons (SVG)
+
+### ✅ Phase 2 — Social Layer (COMPLETE, build passing)
+`npm run build` → 469KB JS, 21KB CSS, PWA service worker.
 
 **What is fully built:**
-- [x] Project scaffold + Tailwind config + PWA manifest
-- [x] Supabase SQL migrations + auth trigger + seed data
-- [x] Auth flow (magic link + Google OAuth, protected routes)
-- [x] Onboarding (set display name on first sign-in)
-- [x] App shell (bottom nav, layout, routing)
-- [x] Home screen (today's card, weekly streak bar, stats row)
-- [x] Reading & reflection flow (5 steps, writes to Supabase via RPC)
-- [x] XP & streak calculation (server-side atomic RPC)
-- [x] Profile screen (stats grid, streak calendar, sign out)
-- [x] Quests tab (active quest card + progress bar)
-- [x] Friends tab (placeholder "Coming Soon")
+- [x] Friend system: invite codes, add/accept/decline friends (`useFriends`)
+- [x] Nudge system: nudge buttons, `send_nudge` RPC, daily limit (`useNudge`)
+- [x] Badge system: 11 badges seeded, `check_and_award_badges` RPC, badges grid on profile
+- [x] Share button: Web Share API + clipboard fallback
+- [x] Celebration animations: confetti, streak count-up, XP fly-up, milestone flair
+- [x] New badges notification on celebration screen
+- [x] Reading flow expanded to 7 steps (Friend Streaks + Done screens)
+- [x] Friend activity snippet on Home screen
+- [x] Mutual streak tracking (`update_mutual_streaks` RPC)
+- [x] First-time user auto-redirect to onboarding
 
-**What is NOT built (Phase 2+):**
-- [ ] Friend system, nudges, friend streaks
-- [ ] Push notifications
+**What is NOT built (Phase 3+):**
+- [ ] Push notification delivery (data model ready, delivery deferred)
 - [ ] Admin dashboard / quest builder
-- [ ] Badge earning and display
-- [ ] Share button / native share sheet
-- [ ] Celebration animations (confetti, fire flicker)
+- [ ] Multiple quest support / journey map visualization
+- [ ] Discipline/event quest types
+- [ ] Streak freeze mechanic
+- [ ] Announcements system
+- [ ] QR code for invite sharing
 - [ ] Offline reading / advanced SW caching
 - [ ] Onboarding carousel
 - [ ] Streak freeze mechanic

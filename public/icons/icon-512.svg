@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#1A1D2E" rx="96"/>
+  <text
+    x="256"
+    y="336"
+    font-family="'Nunito', 'Arial Black', sans-serif"
+    font-weight="900"
+    font-size="256"
+    text-anchor="middle"
+    letter-spacing="-10"
+  ><tspan fill="#F1F5F9">T</tspan><tspan fill="#00C9A7">Q</tspan></text>
+</svg>
