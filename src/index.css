@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* === BASE (Dark Mode Default) === */
+  --color-bg-primary:     #1A1D2E;
+  --color-bg-surface:     #232740;
+  --color-bg-surface-2:   #2D3154;
+  --color-bg-overlay:     rgba(26, 29, 46, 0.85);
+
+  /* === ACCENT COLORS === */
+  --color-teal:           #00C9A7;
+  --color-teal-light:     #33FFD4;
+  --color-teal-dark:      #009B82;
+
+  --color-gold:           #FFB830;
+  --color-gold-light:     #FFD470;
+  --color-gold-dark:      #E09800;
+
+  --color-purple:         #8B5CF6;
+  --color-purple-light:   #A78BFA;
+  --color-purple-dark:    #7340E0;
+
+  /* === SEMANTIC COLORS === */
+  --color-success:        #34D399;
+  --color-warning:        #FBBF24;
+  --color-error:          #F87171;
+  --color-info:           #60A5FA;
+
+  /* === TEXT === */
+  --color-text-primary:   #F1F5F9;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted:     #64748B;
+  --color-text-inverse:   #1A1D2E;
+
+  /* === BORDERS & DIVIDERS === */
+  --color-border:         #334155;
+  --color-border-subtle:  #1E293B;
+  --color-border-focus:   #00C9A7;
+}
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: 'Nunito', 'Nunito Sans', system-ui, -apple-system, sans-serif;
+    background-color: #1A1D2E;
+    color: #F1F5F9;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  input, textarea, select, button {
+    font-family: inherit;
+  }
+}
+
+@layer components {
+  /* === GRADIENTS === */
+  .gradient-fire {
+    background: linear-gradient(135deg, #FFB830 0%, #FF6B35 50%, #FF4444 100%);
+  }
+
+  .gradient-quest {
+    background: linear-gradient(135deg, #8B5CF6 0%, #00C9A7 100%);
+  }
+
+  .gradient-xp {
+    background: linear-gradient(135deg, #FFB830 0%, #FFD470 100%);
+  }
+
+  /* === GLOW EFFECTS === */
+  .glow-teal {
+    box-shadow: 0 0 40px rgba(0, 201, 167, 0.15);
+  }
+
+  .glow-gold {
+    box-shadow: 0 0 40px rgba(255, 184, 48, 0.15);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.15);
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @keyframes gold-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(255, 184, 48, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 0 6px rgba(255, 184, 48, 0);
+    }
+  }
+
+  .animate-gold-pulse {
+    animation: gold-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes fire-pulse {
+    0%, 100% { transform: scale(1.0); }
+    50% { transform: scale(1.08); }
+  }
+
+  .animate-fire-pulse {
+    animation: fire-pulse 2s ease-in-out infinite;
+  }
+}

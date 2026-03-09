@@ -1,0 +1,62 @@
+import { useAuth } from '../hooks/useAuth'
+import { useProfile } from '../hooks/useProfile'
+import { ProfileHeader } from '../components/profile/ProfileHeader'
+import { StatsGrid } from '../components/profile/StatsGrid'
+import { StreakCalendar } from '../components/profile/StreakCalendar'
+import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+
+export function ProfilePage() {
+  const { signOut } = useAuth()
+  const { profile, completions, loading } = useProfile()
+
+  if (loading || !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="text-tq-text-muted text-sm">Loading profile…</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="px-4 py-6 space-y-6">
+      {/* Profile Header */}
+      <ProfileHeader profile={profile} />
+
+      {/* Stats Grid */}
+      <section aria-label="Statistics">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-tq-text-muted mb-3">
+          Your Stats
+        </h2>
+        <StatsGrid profile={profile} passagesRead={completions.length} />
+      </section>
+
+      {/* Streak Calendar */}
+      <section aria-label="Streak calendar">
+        <Card>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-tq-text-muted mb-4">
+            Streak Calendar
+          </h2>
+          <StreakCalendar completions={completions} />
+        </Card>
+      </section>
+
+      {/* Settings */}
+      <section aria-label="Settings">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-tq-text-muted mb-3">
+          Settings
+        </h2>
+        <Button
+          variant="danger"
+          fullWidth
+          onClick={signOut}
+        >
+          Sign Out
+        </Button>
+      </section>
+
+      {/* Bottom padding */}
+      <div className="h-4" />
+    </div>
+  )
+}
