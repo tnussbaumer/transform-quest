@@ -28,12 +28,7 @@ export function useAuth(): AuthState {
       .single()
     const p = data as Profile | null
     setProfile(p)
-    // Detect first-time user: display_name still matches email prefix
-    if (!p) {
-      setIsNewUser(true)
-    } else {
-      setIsNewUser(p.onboarding_completed === false)
-    }
+    setIsNewUser(!p?.onboarding_completed)
   }
 
   useEffect(() => {

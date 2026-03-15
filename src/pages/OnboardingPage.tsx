@@ -6,7 +6,7 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 
 export function OnboardingPage() {
-  const { user, refreshProfile } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [displayName, setDisplayName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -27,7 +27,6 @@ export function OnboardingPage() {
     if (err) {
       setError(err.message)
     } else {
-      await refreshProfile()
       navigate('/', { replace: true })
     }
   }
