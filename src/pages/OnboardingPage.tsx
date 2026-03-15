@@ -6,7 +6,7 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 
 export function OnboardingPage() {
-  const { user } = useAuth()
+  const { user, refreshProfile } = useAuth()
   const navigate = useNavigate()
   const [displayName, setDisplayName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -20,13 +20,14 @@ export function OnboardingPage() {
 
     const { error: err } = await supabase
       .from('profiles')
-      .update({ display_name: displayName.trim() })
+      .update({ display_name: displayName.trim(), onboarding_completed: true })
       .eq('id', user.id)
 
     setSaving(false)
     if (err) {
       setError(err.message)
     } else {
+      await refreshProfile()
       navigate('/', { replace: true })
     }
   }

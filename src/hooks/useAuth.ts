@@ -10,6 +10,7 @@ interface AuthState {
   loading: boolean
   isNewUser: boolean
   signOut: () => Promise<void>
+  refreshProfile: () => Promise<void>
 }
 
 export function useAuth(): AuthState {
@@ -28,9 +29,10 @@ export function useAuth(): AuthState {
     const p = data as Profile | null
     setProfile(p)
     // Detect first-time user: display_name still matches email prefix
-    if (p && authUser.email) {
-      const emailPrefix = authUser.email.split('@')[0]
-      setIsNewUser(p.display_name === emailPrefix)
+    if (!p) {
+      setIsNewUser(true)
+    } else {
+      setIsNewUser(p.onboarding_completed === false)
     }
   }
 
@@ -67,5 +69,9 @@ export function useAuth(): AuthState {
     await supabase.auth.signOut()
   }
 
-  return { user, session, profile, loading, isNewUser, signOut }
+  async function refreshProfile() {
+    if (user) await fetchProfile(user)
+  }
+
+  return { user, session, profile, loading, isNewUser, signOut, refreshProfile }
 }
