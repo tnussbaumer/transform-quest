@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading, isNewUser } = useAuth()
+  const { user, loading, profile } = useAuth()
   const { pathname } = useLocation()
 
   if (loading) {
@@ -23,7 +23,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // First-time user: redirect to onboarding unless already there
-  if (isNewUser && pathname !== '/onboarding') {
+  if (profile && !profile.onboarding_completed && pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />
   }
 
