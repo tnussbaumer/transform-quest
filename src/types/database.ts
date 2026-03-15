@@ -14,6 +14,7 @@ export interface Profile {
   daily_reminder_time: string
   push_subscription: Record<string, unknown> | null
   invite_code: string | null
+  onboarding_completed: boolean
   created_at: string
 }
 

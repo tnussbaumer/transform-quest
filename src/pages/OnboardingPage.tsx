@@ -20,7 +20,7 @@ export function OnboardingPage() {
 
     const { error: err } = await supabase
       .from('profiles')
-      .update({ display_name: displayName.trim() })
+      .update({ display_name: displayName.trim(), onboarding_completed: true })
       .eq('id', user.id)
 
     setSaving(false)

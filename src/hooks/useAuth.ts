@@ -30,9 +30,8 @@ export function useAuth(): AuthState {
     // Detect first-time user: display_name still matches email prefix
     if (!p) {
       setIsNewUser(true)
-    } else if (authUser.email) {
-      const emailPrefix = authUser.email.split('@')[0]
-      setIsNewUser(p.display_name === emailPrefix)
+    } else {
+      setIsNewUser(p.onboarding_completed === false)
     }
   }
 
