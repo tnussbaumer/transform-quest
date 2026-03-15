@@ -10,6 +10,7 @@ interface AuthState {
   loading: boolean
   isNewUser: boolean
   signOut: () => Promise<void>
+  refreshProfile: () => Promise<void>
 }
 
 export function useAuth(): AuthState {
@@ -68,5 +69,9 @@ export function useAuth(): AuthState {
     await supabase.auth.signOut()
   }
 
-  return { user, session, profile, loading, isNewUser, signOut }
+  async function refreshProfile() {
+    if (user) await fetchProfile(user)
+  }
+
+  return { user, session, profile, loading, isNewUser, signOut, refreshProfile }
 }
