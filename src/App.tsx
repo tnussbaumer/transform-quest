@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './hooks/useAuth'
 import { Layout } from './components/layout/Layout'
 import { ProtectedRoute } from './components/layout/ProtectedRoute'
+import { AdminRoute } from './components/layout/AdminRoute'
 import { AuthPage } from './pages/AuthPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { HomePage } from './pages/HomePage'
@@ -9,6 +10,7 @@ import { ReadingFlowPage } from './pages/ReadingFlowPage'
 import { QuestsPage } from './pages/QuestsPage'
 import { FriendsPage } from './pages/FriendsPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { AdminPage } from './pages/AdminPage'
 
 export default function App() {
   return (
@@ -30,7 +32,19 @@ export default function App() {
             }
           />
 
-          {/* Reading flow (protected, full-screen, no bottom nav) */}
+          {/* Admin dashboard (leader/admin only, no bottom nav) */}
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <div className="min-h-screen bg-tq-bg">
+                <AdminPage />
+              </div>
+            </AdminRoute>
+          }
+        />
+
+        {/* Reading flow (protected, full-screen, no bottom nav) */}
           <Route
             path="/read/:questDayId"
             element={

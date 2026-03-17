@@ -1,14 +1,17 @@
-import { Flame, Compass } from 'lucide-react'
+import { Flame, Compass, Snowflake } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useQuest } from '../hooks/useQuest'
 import { useCompletion } from '../hooks/useCompletion'
 import { useProfile } from '../hooks/useProfile'
 import { useFriends } from '../hooks/useFriends'
+import { useStreakFreeze } from '../hooks/useStreakFreeze'
 import { TodaysReadingCard } from '../components/home/TodaysReadingCard'
 import { WeeklyStreakBar } from '../components/home/WeeklyStreakBar'
 import { QuickStatsRow } from '../components/home/QuickStatsRow'
 import { FriendActivitySnippet } from '../components/home/FriendActivitySnippet'
+import { AnnouncementBanner } from '../components/home/AnnouncementBanner'
 import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
 
 export function HomePage() {
   const { profile } = useAuth()
@@ -16,6 +19,7 @@ export function HomePage() {
   const { isCompletedToday, loading: completionLoading } = useCompletion(questDay?.id)
   const { completions, profile: fullProfile } = useProfile()
   const { friends } = useFriends()
+  const { needsFreeze, freezesAvailable, useFreeze, dismiss } = useStreakFreeze()
 
   const displayName = profile?.display_name ?? 'friend'
   const streak = fullProfile?.current_streak ?? profile?.current_streak ?? 0
@@ -40,6 +44,39 @@ export function HomePage() {
           <span className="text-lg font-extrabold text-tq-gold tabular-nums">{streak}</span>
         </div>
       </header>
+
+      {/* Streak Freeze Modal */}
+      {needsFreeze && (
+        <Card glow="gold">
+          <div className="space-y-4 text-center">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 rounded-full bg-tq-surface-2 flex items-center justify-center">
+                <Snowflake size={32} className="text-tq-teal" />
+              </div>
+            </div>
+            <div>
+              <h2 className="text-lg font-extrabold text-tq-text">Streak at risk!</h2>
+              <p className="text-tq-text-sec text-sm mt-1">
+                You missed yesterday. Use a streak freeze to save your streak?
+              </p>
+              <p className="text-tq-gold text-sm font-bold mt-1">
+                {freezesAvailable} freeze{freezesAvailable !== 1 ? 's' : ''} available
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="secondary" fullWidth onClick={dismiss}>
+                Let it go
+              </Button>
+              <Button fullWidth onClick={async () => { await useFreeze() }}>
+                Use Freeze
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Announcements */}
+      <AnnouncementBanner />
 
       {/* Today's Reading Card */}
       {loading ? (
