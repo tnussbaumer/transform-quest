@@ -109,7 +109,7 @@ export function useFriends(): FriendsState {
       .from('profiles')
       .select('id')
       .eq('invite_code', trimmedCode)
-      .single()
+      .maybeSingle()
 
     if (error || !target) throw new Error('Invite code not found')
 

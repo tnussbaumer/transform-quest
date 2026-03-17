@@ -37,7 +37,7 @@ export function useCompletion(questDayId: string | undefined): CompletionState {
         .select('completed_at')
         .eq('user_id', user.id)
         .eq('quest_day_id', questDayId)
-        .single()
+        .maybeSingle()
 
       const row = data as { completed_at: string } | null
       setCompleted(row ? isCompletedToday(row.completed_at) : false)
