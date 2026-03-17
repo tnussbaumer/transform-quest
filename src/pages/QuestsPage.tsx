@@ -1,23 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Compass, ChevronDown, ChevronUp, Trophy } from 'lucide-react'
 import { useQuestHistory } from '../hooks/useQuestHistory'
 import { useQuest } from '../hooks/useQuest'
-import { useProfile } from '../hooks/useProfile'
 import { ActiveQuestCard } from '../components/quest/ActiveQuestCard'
 import JourneyMap from '../components/quest/JourneyMap'
 import { Card } from '../components/ui/Card'
 import type { QuestDay } from '../types/database'
 
 export function QuestsPage() {
-  const { activeQuests, completedQuests, loading } = useQuestHistory()
+  const { activeQuests, completedQuests, completedDayIds, loading, refetch } = useQuestHistory()
   const { dayNumber } = useQuest()
-  const { completions } = useProfile()
   const navigate = useNavigate()
 
   const [expandedMaps, setExpandedMaps] = useState<Set<string>>(new Set())
 
-  const completedDayIds = new Set(completions.map(c => c.quest_day_id))
+  // Refetch when page becomes visible (navigating back from reading flow)
+  const handleFocus = useCallback(() => { refetch() }, [refetch])
+  useEffect(() => {
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [handleFocus])
 
   function toggleMap(questId: string) {
     setExpandedMaps(prev => {
