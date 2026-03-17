@@ -34,6 +34,7 @@ export function ReadingFlowPage() {
 
   const [step, setStep] = useState(STEP_PASSAGE)
   const [questDay, setQuestDay] = useState<QuestDay | null>(null)
+  const [questType, setQuestType] = useState<'reading' | 'discipline' | 'event'>('reading')
   const [loadingDay, setLoadingDay] = useState(true)
   const [answers, setAnswers] = useState({ a1: '', a2: '', a3: '' })
   const [result, setResult] = useState<CompleteReadingResult | null>(null)
@@ -47,8 +48,17 @@ export function ReadingFlowPage() {
       .select('*')
       .eq('id', questDayId)
       .single()
-      .then(({ data }) => {
-        setQuestDay(data as QuestDay | null)
+      .then(async ({ data }) => {
+        const qd = data as QuestDay | null
+        setQuestDay(qd)
+        if (qd) {
+          const { data: quest } = await supabase
+            .from('quests')
+            .select('quest_type')
+            .eq('id', qd.quest_id)
+            .single()
+          if (quest) setQuestType((quest as { quest_type: string }).quest_type as 'reading' | 'discipline' | 'event')
+        }
         setLoadingDay(false)
       })
   }, [questDayId])
@@ -81,6 +91,10 @@ export function ReadingFlowPage() {
         new_xp: profile?.total_xp ?? 0,
         new_level: profile?.level_title ?? 'Seedling',
         new_badges: [],
+        xp_earned: xpEarned,
+        milestone_bonus: 0,
+        quest_complete: false,
+        freeze_earned: false,
       })
     }
     setStep(STEP_CELEBRATE)
@@ -109,6 +123,7 @@ export function ReadingFlowPage() {
       {step === STEP_PASSAGE && (
         <PassageStep
           questDay={questDay}
+          questType={questType}
           onContinue={() => setStep(STEP_Q1)}
         />
       )}
@@ -120,6 +135,7 @@ export function ReadingFlowPage() {
           onChange={val => setAnswers(a => ({ ...a, a1: val }))}
           onNext={() => setStep(STEP_Q2)}
           isLast={false}
+          questType={questType}
         />
       )}
 
@@ -130,6 +146,7 @@ export function ReadingFlowPage() {
           onChange={val => setAnswers(a => ({ ...a, a2: val }))}
           onNext={() => setStep(STEP_Q3)}
           isLast={false}
+          questType={questType}
         />
       )}
 
@@ -139,6 +156,7 @@ export function ReadingFlowPage() {
           value={answers.a3}
           onChange={val => setAnswers(a => ({ ...a, a3: val }))}
           onNext={handleFinish}
+          questType={questType}
           isLast={true}
           submitting={submitting}
         />

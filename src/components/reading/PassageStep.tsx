@@ -5,10 +5,12 @@ import type { QuestDay } from '../../types/database'
 
 interface PassageStepProps {
   questDay: QuestDay
+  questType?: 'reading' | 'discipline' | 'event'
   onContinue: () => void
 }
 
-export function PassageStep({ questDay, onContinue }: PassageStepProps) {
+export function PassageStep({ questDay, questType, onContinue }: PassageStepProps) {
+  const isDiscipline = questType === 'discipline' || questType === 'event'
   const navigate = useNavigate()
 
   return (
@@ -23,7 +25,7 @@ export function PassageStep({ questDay, onContinue }: PassageStepProps) {
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-xl font-extrabold text-tq-text flex-1">
-          {questDay.passage_reference ?? "Today's Passage"}
+          {questDay.passage_reference ?? (isDiscipline ? "Today's Challenge" : "Today's Passage")}
         </h1>
       </div>
 
@@ -31,7 +33,7 @@ export function PassageStep({ questDay, onContinue }: PassageStepProps) {
       <div className="flex-1 overflow-y-auto px-4 pb-6">
         <div className="bg-tq-surface rounded-2xl p-5 border border-tq-border/50">
           <p className="text-tq-text text-lg leading-relaxed whitespace-pre-wrap font-normal">
-            {questDay.passage_text ?? 'Passage text not available.'}
+            {questDay.passage_text ?? (isDiscipline ? 'Challenge details not available.' : 'Passage text not available.')}
           </p>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { Snowflake } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useProfile } from '../hooks/useProfile'
 import { useBadges } from '../hooks/useBadges'
@@ -33,6 +34,16 @@ export function ProfilePage() {
         </h2>
         <StatsGrid profile={profile} passagesRead={completions.length} />
       </section>
+
+      {/* Streak Freezes */}
+      {profile && profile.streak_freezes_available > 0 && (
+        <div className="flex items-center gap-2 px-1">
+          <Snowflake size={16} className="text-tq-teal" />
+          <span className="text-tq-text-sec text-sm font-semibold">
+            {profile.streak_freezes_available} streak freeze{profile.streak_freezes_available !== 1 ? 's' : ''} available
+          </span>
+        </div>
+      )}
 
       {/* Badges */}
       <section aria-label="Badges">

@@ -64,6 +64,27 @@ export interface CompleteReadingResult {
   new_xp: number
   new_level: string
   new_badges: NewBadge[]
+  xp_earned: number
+  milestone_bonus: number
+  quest_complete: boolean
+  freeze_earned: boolean
+}
+
+export interface Announcement {
+  id: string
+  title: string
+  body: string | null
+  created_by: string | null
+  is_active: boolean
+  created_at: string
+  expires_at: string | null
+}
+
+export interface StreakFreezeUsed {
+  id: string
+  user_id: string
+  used_on: string
+  created_at: string
 }
 
 export interface Friendship {

@@ -1,10 +1,16 @@
 import { Button } from '../ui/Button'
 import { Textarea } from '../ui/Textarea'
 
-const QUESTIONS = [
+const READING_QUESTIONS = [
   'What does this passage say?',
   'How does this apply to you?',
   'What does this require you to do?',
+]
+
+const DISCIPLINE_QUESTIONS = [
+  'What did you do?',
+  'What did you learn?',
+  'What will you do differently?',
 ]
 
 interface QuestionStepProps {
@@ -14,6 +20,7 @@ interface QuestionStepProps {
   onNext: () => void
   isLast: boolean
   submitting?: boolean
+  questType?: 'reading' | 'discipline' | 'event'
 }
 
 export function QuestionStep({
@@ -23,8 +30,12 @@ export function QuestionStep({
   onNext,
   isLast,
   submitting = false,
+  questType,
 }: QuestionStepProps) {
-  const question = QUESTIONS[questionIndex]
+  const questions = questType === 'discipline' || questType === 'event'
+    ? DISCIPLINE_QUESTIONS
+    : READING_QUESTIONS
+  const question = questions[questionIndex]
 
   return (
     <div className="flex flex-col min-h-screen px-4">
