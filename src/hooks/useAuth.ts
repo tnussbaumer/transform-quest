@@ -11,6 +11,7 @@ interface AuthState {
   isNewUser: boolean
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
+  patchProfile: (updates: Partial<Profile>) => void
 }
 
 export function useAuth(): AuthState {
@@ -68,5 +69,9 @@ export function useAuth(): AuthState {
     if (user) await fetchProfile(user)
   }
 
-  return { user, session, profile, loading, isNewUser, signOut, refreshProfile }
+  function patchProfile(updates: Partial<Profile>) {
+    setProfile(prev => prev ? { ...prev, ...updates } : prev)
+  }
+
+  return { user, session, profile, loading, isNewUser, signOut, refreshProfile, patchProfile }
 }
