@@ -12,12 +12,15 @@ interface QuestWithProgress extends Quest {
 interface QuestHistoryState {
   activeQuests: QuestWithProgress[]
   completedQuests: QuestWithProgress[]
+  completedDayIds: Set<string>
   loading: boolean
+  refetch: () => Promise<void>
 }
 
 export function useQuestHistory(): QuestHistoryState {
   const [activeQuests, setActiveQuests] = useState<QuestWithProgress[]>([])
   const [completedQuests, setCompletedQuests] = useState<QuestWithProgress[]>([])
+  const [completedDayIds, setCompletedDayIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
@@ -47,7 +50,8 @@ export function useQuestHistory(): QuestHistoryState {
         .eq('user_id', user.id)
       const completions = (compData ?? []) as Completion[]
 
-      const completedDayIds = new Set(completions.map(c => c.quest_day_id))
+      const dayIds = new Set(completions.map(c => c.quest_day_id))
+      setCompletedDayIds(dayIds)
 
       const active: QuestWithProgress[] = []
       const completed: QuestWithProgress[] = []
@@ -55,7 +59,7 @@ export function useQuestHistory(): QuestHistoryState {
       for (const q of quests) {
         const questDays = allDays.filter(d => d.quest_id === q.id)
         const totalDays = questDays.length
-        const completedDays = questDays.filter(d => completedDayIds.has(d.id)).length
+        const completedDays = questDays.filter(d => dayIds.has(d.id)).length
         const completionPercent = totalDays > 0
           ? Math.round((completedDays / totalDays) * 100)
           : 0
@@ -91,5 +95,5 @@ export function useQuestHistory(): QuestHistoryState {
     load()
   }, [load])
 
-  return { activeQuests, completedQuests, loading }
+  return { activeQuests, completedQuests, completedDayIds, loading, refetch: load }
 }
