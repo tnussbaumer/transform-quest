@@ -21,7 +21,16 @@ export function AdminRoute({ children }: AdminRouteProps) {
     return <Navigate to="/auth" replace />
   }
 
-  if (profile?.role !== 'leader' && profile?.role !== 'admin') {
+  // Wait for profile to load before checking role
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-tq-bg flex items-center justify-center">
+        <div className="text-tq-text-muted text-sm">Loading...</div>
+      </div>
+    )
+  }
+
+  if (profile.role !== 'leader' && profile.role !== 'admin') {
     return <Navigate to="/" replace />
   }
 
