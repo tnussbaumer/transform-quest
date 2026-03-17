@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext, createContext } from 'react'
+import type { ReactNode } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { Profile } from '../types/database'
@@ -11,9 +12,12 @@ interface AuthState {
   isNewUser: boolean
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
+  patchProfile: (updates: Partial<Profile>) => void
 }
 
-export function useAuth(): AuthState {
+const AuthContext = createContext<AuthState | null>(null)
+
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -68,5 +72,21 @@ export function useAuth(): AuthState {
     if (user) await fetchProfile(user)
   }
 
-  return { user, session, profile, loading, isNewUser, signOut, refreshProfile }
+  function patchProfile(updates: Partial<Profile>) {
+    setProfile(prev => prev ? { ...prev, ...updates } : prev)
+  }
+
+  const value: AuthState = { user, session, profile, loading, isNewUser, signOut, refreshProfile, patchProfile }
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth(): AuthState {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider')
+  return ctx
 }
