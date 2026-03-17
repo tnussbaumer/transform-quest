@@ -2,7 +2,7 @@
 
 > **This is the living reference document for the project.** Update it whenever the app's state meaningfully changes. Use it to orient any new Claude session, onboard collaborators, or remind yourself where things stand.
 
-*Last updated: March 9, 2026 — Phase 2 complete, build passing (469KB JS). Awaiting Supabase project setup + migration 003.*
+*Last updated: March 17, 2026 — Phase 3 complete, build passing (500KB JS, 26KB CSS). Deployed on Vercel.*
 
 ---
 
@@ -28,7 +28,8 @@ A gamified daily Bible reading PWA for Transform Church youth (ages 11–18) in 
 | Routing | React Router | ^7.13.1 |
 | Icons | Lucide React | ^0.577.0 |
 | PWA | vite-plugin-pwa | ^1.2.0 |
-| Hosting | Vercel (planned) | — |
+| Animations | canvas-confetti | ^1.9.3 |
+| Hosting | Vercel | — |
 | Font | Nunito (Google Fonts) | 400/600/700/800/900 |
 
 ---
@@ -37,21 +38,18 @@ A gamified daily Bible reading PWA for Transform Church youth (ages 11–18) in 
 
 ### ✅ Phase 1 — MVP (COMPLETE)
 - Project scaffold, Tailwind config, PWA manifest
-- Supabase SQL migrations + auth trigger + seed data (all 30 Matthew passages now filled in)
+- Supabase SQL migrations + auth trigger + seed data (all 30 Matthew passages filled in)
 - Auth flow (magic link + Google OAuth, protected routes, first-time user auto-redirect)
 - Onboarding (set display name on first sign-in)
 - App shell (bottom nav, layout, routing)
-- Home screen (today's card, weekly streak bar, stats row, friend activity snippet)
+- Home screen (today's card, weekly streak bar, stats row)
 - Reading & reflection flow (writes to Supabase via RPC)
 - XP & streak calculation (server-side atomic RPC)
-- Profile screen (stats grid, streak calendar, badges grid, sign out)
+- Profile screen (stats grid, streak calendar, sign out)
 - Quests tab (active quest card + progress bar)
 - PWA icons (SVG)
 
-### ✅ Phase 2 — Social Layer (COMPLETE, build passing)
-`npm run build` → 469KB JS, 21KB CSS, PWA service worker.
-
-**What is fully built:**
+### ✅ Phase 2 — Social Layer (COMPLETE)
 - [x] Friend system: invite codes, add/accept/decline friends (`useFriends`)
 - [x] Nudge system: nudge buttons, `send_nudge` RPC, daily limit (`useNudge`)
 - [x] Badge system: 11 badges seeded, `check_and_award_badges` RPC, badges grid on profile
@@ -61,19 +59,29 @@ A gamified daily Bible reading PWA for Transform Church youth (ages 11–18) in 
 - [x] Reading flow expanded to 7 steps (Friend Streaks + Done screens)
 - [x] Friend activity snippet on Home screen
 - [x] Mutual streak tracking (`update_mutual_streaks` RPC)
-- [x] First-time user auto-redirect to onboarding
+- [x] First-time user auto-redirect to onboarding (`onboarding_completed` flag)
 
-**What is NOT built (Phase 3+):**
+### ✅ Phase 3 — Admin, Quest Engine & Streak Freeze (COMPLETE)
+`npm run build` → 500KB JS, 26KB CSS, PWA service worker.
+
+- [x] Admin dashboard at `/admin` (leader/admin role required)
+- [x] Quest Builder: create/edit quests + daily readings with CRUD
+- [x] Engagement Dashboard: stat cards, streak leaderboard, inactive users, Nudge All button
+- [x] Announcements Manager: CRUD for announcements with active/inactive toggle + expiry
+- [x] Announcement banners on Home screen (dismissible per-session)
+- [x] Multi-quest support: `useQuestHistory` hook, active + completed quests on Quests page
+- [x] Journey Map: S-curve day visualization with completed/today/future states
+- [x] Streak freeze mechanic: auto-earned every 7 days, `use_streak_freeze` RPC, Home modal
+- [x] Discipline/event quest types: alternate questions in `QuestionStep`, alternate headers in `PassageStep`
+- [x] Updated `complete_reading` RPC: milestone +50 XP, quest completion +200 XP, auto freeze award
+- [x] Leader read-access RLS policies for engagement dashboard
+
+**What is NOT built (Phase 4+):**
 - [ ] Push notification delivery (data model ready, delivery deferred)
-- [ ] Admin dashboard / quest builder
-- [ ] Multiple quest support / journey map visualization
-- [ ] Discipline/event quest types
-- [ ] Streak freeze mechanic
-- [ ] Announcements system
 - [ ] QR code for invite sharing
 - [ ] Offline reading / advanced SW caching
 - [ ] Onboarding carousel
-- [ ] Streak freeze mechanic
+- [ ] Group/team system
 
 ---
 
@@ -82,9 +90,14 @@ A gamified daily Bible reading PWA for Transform Church youth (ages 11–18) in 
 ### One-time Supabase setup
 1. Create project at [supabase.com](https://supabase.com)
 2. In SQL Editor, run **in order**:
-   - `supabase/migrations/001_schema.sql` — tables + RLS + `complete_reading` RPC
-   - `supabase/migrations/002_auth_trigger.sql` — auto-creates profile on sign-up
+   - `supabase/migrations/001_schema.sql` — tables + RLS + `xp_to_level` + `complete_reading` RPC
+   - `supabase/migrations/002_auth_trigger.sql` — on_auth_user_created trigger → `handle_new_user()`
+   - `supabase/migrations/003_phase2_social.sql` — friendships, nudges, badges, user_badges + RLS + RPCs + updated `handle_new_user` (invite_code) + updated `complete_reading`
+   - `supabase/migrations/004_onboarding_flag.sql` — adds `onboarding_completed` to profiles
+   - `supabase/migrations/005_profiles_public_read.sql` — adds `profiles_select_authenticated` RLS policy
+   - `supabase/migrations/006_phase3_admin.sql` — announcements + streak_freezes_used tables, leader write/read policies, updated `complete_reading` + `use_streak_freeze` RPC
    - `supabase/seed.sql` — "Journey Through Matthew" 30-day quest
+   - `supabase/seed_badges.sql` — 11 badge definitions
 3. Enable **Google OAuth**: Dashboard → Authentication → Providers → Google
 4. Set **Site URL** and **Redirect URLs** in Auth settings (include `http://localhost:5173` for local dev, and your Vercel URL for prod)
 5. Create `.env.local` in the project root (this file is gitignored):
@@ -107,149 +120,234 @@ npm run preview   # preview the production build
 ```
 transform-quest/
 ├── docs/
-│   ├── BRAND-GUIDELINES.md        ← Colors, typography, component specs (READ THIS FIRST)
-│   ├── TRANSFORM-QUEST-BLUEPRINT.md ← Architecture, DB schema, screen specs, gamification rules
-│   ├── CLAUDE-CODE-PROMPT.md      ← Phase 1 build instructions
-│   └── SOURCE_OF_TRUTH.md         ← This file
+│   ├── BRAND-GUIDELINES.md          ← Colors, typography, component specs
+│   ├── TRANSFORM-QUEST-BLUEPRINT.md ← Architecture, DB schema, screen specs
+│   ├── CLAUDE-CODE-PROMPT.md        ← Phase 1 build instructions
+│   ├── CLAUDE-CODE-PROMPT-PHASE2.md ← Phase 2 build instructions
+│   ├── CLAUDE-CODE-PROMPT-PHASE3.md ← Phase 3 build instructions
+│   └── SOURCE_OF_TRUTH.md          ← This file
 │
 ├── supabase/
 │   ├── migrations/
-│   │   ├── 001_schema.sql         ← Tables, RLS, complete_reading() RPC
-│   │   └── 002_auth_trigger.sql   ← Auto-create profile on auth.users INSERT
-│   └── seed.sql                   ← "Journey Through Matthew" quest + 30 days
+│   │   ├── 001_schema.sql           ← Tables, RLS, complete_reading() RPC
+│   │   ├── 002_auth_trigger.sql     ← Auto-create profile on auth.users INSERT
+│   │   ├── 003_phase2_social.sql    ← Social tables + RPCs (friends, nudges, badges)
+│   │   ├── 004_onboarding_flag.sql  ← onboarding_completed column
+│   │   ├── 005_profiles_public_read.sql ← Authenticated read-all profiles policy
+│   │   └── 006_phase3_admin.sql     ← Admin tables, leader policies, updated RPCs
+│   ├── seed.sql                     ← "Journey Through Matthew" quest + 30 days
+│   └── seed_badges.sql              ← 11 badge definitions
 │
 ├── src/
-│   ├── App.tsx                    ← Router setup (all routes defined here)
-│   ├── main.tsx                   ← React root render
-│   ├── index.css                  ← Tailwind directives + CSS custom properties + utility classes
+│   ├── App.tsx                      ← Router setup (all routes defined here)
+│   ├── main.tsx                     ← React root render
+│   ├── index.css                    ← Tailwind directives + CSS properties + animations
 │   │
 │   ├── types/
-│   │   └── database.ts            ← TypeScript interfaces: Profile, Quest, QuestDay, Completion, etc.
+│   │   └── database.ts              ← All TypeScript interfaces
 │   │
 │   ├── lib/
-│   │   ├── supabase.ts            ← createClient() — untyped, explicit casts at call sites
-│   │   ├── calculateXp.ts         ← calculateXp(date) → number (base 20 + early bird + weekend)
-│   │   ├── levelUtils.ts          ← getLevelTitle(xp), xpToNextLevel(xp), formatXp(xp)
-│   │   └── streakUtils.ts         ← isCompletedToday(), toLocalDateString(), getCurrentWeekDays()
+│   │   ├── supabase.ts              ← createClient() — untyped, explicit casts at call sites
+│   │   ├── calculateXp.ts           ← calculateXp(date) → number
+│   │   ├── levelUtils.ts            ← getLevelTitle(xp), xpToNextLevel(xp), formatXp(xp)
+│   │   └── streakUtils.ts           ← isCompletedToday(), toLocalDateString(), getCurrentWeekDays()
 │   │
 │   ├── hooks/
-│   │   ├── useAuth.ts             ← { user, session, profile, loading, signOut }
-│   │   ├── useQuest.ts            ← { quest, questDay, dayNumber, totalDays, loading, error }
-│   │   ├── useCompletion.ts       ← { isCompletedToday, submitCompletion(), loading, submitting }
-│   │   └── useProfile.ts          ← { profile, completions[], loading, refetch() }
+│   │   ├── useAuth.tsx              ← AuthProvider Context + useAuth() hook
+│   │   ├── useQuest.ts              ← { quest, questDay, dayNumber, totalDays, loading }
+│   │   ├── useCompletion.ts         ← { isCompletedToday, submitCompletion(), submitting }
+│   │   ├── useProfile.ts            ← { profile, completions[], loading, refetch() }
+│   │   ├── useFriends.ts            ← { friends, pendingIncoming, addFriend, acceptFriend, ... }
+│   │   ├── useNudge.ts              ← { todaysNudges, hasNudgedToday, nudgeFriend }
+│   │   ├── useBadges.ts             ← { allBadges, earnedBadges, hasBadge }
+│   │   ├── useQuestHistory.ts       ← { activeQuests, completedQuests, loading }
+│   │   ├── useAdminStats.ts         ← { totalUsers, activeToday, avgStreak, profiles }
+│   │   └── useStreakFreeze.ts        ← { needsFreeze, freezesAvailable, useFreeze, dismiss }
 │   │
 │   ├── pages/
-│   │   ├── AuthPage.tsx           ← /auth — magic link + Google OAuth sign-in
-│   │   ├── OnboardingPage.tsx     ← /onboarding — set display name on first sign-in
-│   │   ├── HomePage.tsx           ← / — today's reading card, streak bar, stats
-│   │   ├── ReadingFlowPage.tsx    ← /read/:questDayId — full-screen 5-step flow
-│   │   ├── QuestsPage.tsx         ← /quests — active quest card + completed (empty state)
-│   │   ├── FriendsPage.tsx        ← /friends — "Coming Soon" placeholder
-│   │   └── ProfilePage.tsx        ← /profile — stats, calendar, sign out
+│   │   ├── AuthPage.tsx             ← /auth — magic link + Google OAuth
+│   │   ├── OnboardingPage.tsx       ← /onboarding — set display name
+│   │   ├── HomePage.tsx             ← / — reading card, streak, stats, announcements, freeze modal
+│   │   ├── ReadingFlowPage.tsx      ← /read/:questDayId — 5-7 step flow
+│   │   ├── QuestsPage.tsx           ← /quests — active quests + journey map + completed
+│   │   ├── FriendsPage.tsx          ← /friends — invite code, requests, friend list
+│   │   ├── ProfilePage.tsx          ← /profile — stats, calendar, badges, freeze count
+│   │   └── AdminPage.tsx            ← /admin — quest builder, engagement, announcements
 │   │
 │   └── components/
-│       ├── ui/
-│       │   ├── Button.tsx         ← variants: primary|secondary|danger|success, fullWidth prop
-│       │   ├── Card.tsx           ← rounded-2xl tq-surface card, optional glow prop
-│       │   ├── Input.tsx          ← 16px font (prevents iOS zoom), teal focus ring
-│       │   └── Textarea.tsx       ← auto-grow (80px–160px), same style as Input
-│       │
-│       ├── layout/
-│       │   ├── Layout.tsx         ← max-w-[428px] centered container + BottomNav
-│       │   ├── BottomNav.tsx      ← 4 tabs: Home/Quests/Friends/Profile, 64px height
-│       │   └── ProtectedRoute.tsx ← redirects to /auth if no session
-│       │
-│       ├── home/
-│       │   ├── TodaysReadingCard.tsx  ← quest title, passage ref, Day X of Y, CTA button
-│       │   ├── WeeklyStreakBar.tsx    ← 7 circles Mon-Sun, color-coded by completion status
-│       │   └── QuickStatsRow.tsx     ← 3-col grid: streak | XP | day progress
-│       │
-│       ├── reading/
-│       │   ├── PassageStep.tsx    ← step 1: passage text, continue button
-│       │   ├── QuestionStep.tsx   ← steps 2-4: question + textarea + next/finish
-│       │   ├── CelebrationStep.tsx ← step 5: fire icon, streak count (48px/900), +XP
-│       │   └── ProgressDots.tsx   ← pill-shaped step indicator (active=wide teal, past=small, future=dim)
-│       │
-│       ├── quest/
-│       │   └── ActiveQuestCard.tsx ← title, description, date range, gradient-quest progress bar
-│       │
-│       └── profile/
-│           ├── ProfileHeader.tsx  ← 80px initials avatar (tq-purple bg), name, level title, join date
-│           ├── StatsGrid.tsx      ← 2×2 grid: streak, XP, passages read, longest streak
-│           └── StreakCalendar.tsx ← monthly calendar, teal = completed, gold border = today
+│       ├── ui/                      Button, Card, Input, Textarea
+│       ├── layout/                  Layout, BottomNav, ProtectedRoute, AdminRoute
+│       ├── home/                    TodaysReadingCard, WeeklyStreakBar, QuickStatsRow,
+│       │                            FriendActivitySnippet, AnnouncementBanner
+│       ├── reading/                 PassageStep, QuestionStep, CelebrationStep,
+│       │                            ProgressDots, FriendStreaksStep, ShareButton
+│       ├── quest/                   ActiveQuestCard, JourneyMap
+│       ├── profile/                 ProfileHeader, StatsGrid, StreakCalendar,
+│       │                            BadgesGrid, BadgeCircle
+│       ├── friends/                 FriendCard, FriendsList, AddFriendSection, PendingRequests
+│       └── admin/                   QuestBuilder, EngagementDashboard, AnnouncementsManager
 │
-├── .env.local.example             ← Copy to .env.local and fill in your keys
-├── tailwind.config.js             ← Full tq-* color palette + Nunito font + borderRadius
-├── postcss.config.js              ← tailwindcss + autoprefixer
-├── vite.config.ts                 ← @vitejs/plugin-react + vite-plugin-pwa
-└── index.html                     ← Nunito Google Font link, PWA meta tags
+├── vercel.json                      ← SPA rewrite rule for client-side routing
+├── .env.local.example               ← Copy to .env.local and fill in your keys
+├── tailwind.config.js               ← Full tq-* color palette + Nunito font
+├── vite.config.ts                   ← @vitejs/plugin-react + vite-plugin-pwa
+└── index.html                       ← Nunito Google Font link, PWA meta tags
 ```
 
 ---
 
 ## 6. DATABASE SCHEMA
 
-All tables live in `public` schema. Run `supabase/migrations/001_schema.sql` to create them.
+All tables live in `public` schema. Run migrations 001–006 in order.
 
 ### `profiles`
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | UUID PK | References `auth.users(id)` |
-| `display_name` | TEXT | Set on onboarding, default = email prefix |
-| `avatar_url` | TEXT nullable | Not used in Phase 1 UI |
+| `display_name` | TEXT NOT NULL | Set during onboarding |
+| `avatar_url` | TEXT nullable | |
 | `role` | TEXT | `'youth'` \| `'leader'` \| `'admin'`, default `'youth'` |
-| `current_streak` | INT | Updated by `complete_reading()` RPC |
+| `current_streak` | INT | Updated by `complete_reading()` |
 | `longest_streak` | INT | Auto-updated if current exceeds it |
 | `total_xp` | INT | Cumulative XP |
 | `level_title` | TEXT | Seedling → Sprout → Rooted → Branching → Flourishing → Mighty Oak |
 | `last_completed_at` | TIMESTAMPTZ | Used for streak logic |
-| `streak_freezes_available` | INT | Phase 2+ feature |
-| `daily_reminder_time` | TIME | Default 19:00 — Phase 2+ |
+| `streak_freezes_available` | INT | Default 0, auto-awarded every 7-day streak |
+| `daily_reminder_time` | TIME | Default 19:00 |
+| `push_subscription` | JSONB nullable | For future push notifications |
+| `invite_code` | TEXT UNIQUE | 8-char uppercase, auto-generated on signup |
+| `onboarding_completed` | BOOLEAN | Default false |
 | `created_at` | TIMESTAMPTZ | Join date |
+
+RLS: all authenticated users can SELECT any row. Own-row UPDATE/INSERT only.
 
 ### `quests`
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | UUID PK | |
-| `title` | TEXT | e.g. "Journey Through Matthew" |
+| `title` | TEXT NOT NULL | e.g. "Journey Through Matthew" |
 | `description` | TEXT nullable | |
 | `start_date` | DATE | |
 | `end_date` | DATE | |
 | `quest_type` | TEXT | `'reading'` \| `'discipline'` \| `'event'` |
-| `is_active` | BOOLEAN | App fetches where `is_active = true` |
-| `badge_name/icon` | TEXT | Phase 2+ |
+| `created_by` | UUID nullable | References profiles |
+| `badge_name` | TEXT nullable | |
+| `badge_icon` | TEXT nullable | |
+| `is_active` | BOOLEAN | Default true |
+| `created_at` | TIMESTAMPTZ | |
+
+RLS: all authenticated SELECT. Leaders/admins can INSERT + UPDATE.
 
 ### `quest_days`
 | Column | Type | Notes |
 |--------|------|-------|
-| `id` | UUID PK | This is the `questDayId` used in `/read/:questDayId` |
-| `quest_id` | UUID FK | → `quests.id` |
-| `day_number` | INT | 1–30, used to find today's day |
-| `passage_reference` | TEXT | e.g. "Matthew 5:1-16" |
-| `passage_text` | TEXT | Full NIV text (days 1-5 seeded; 6-30 placeholder) |
-| `is_milestone` | BOOLEAN | Days 7, 14, 21, 30 in seed |
-| `milestone_note` | TEXT | Shown to user on milestone days |
+| `id` | UUID PK | Used in `/read/:questDayId` |
+| `quest_id` | UUID FK | → `quests.id` CASCADE |
+| `day_number` | INT | 1–N, UNIQUE per quest |
+| `passage_reference` | TEXT nullable | e.g. "Matthew 5:1-16" |
+| `passage_text` | TEXT nullable | Passage content or challenge details |
+| `is_milestone` | BOOLEAN | Default false. Days 7, 14, 21, 30 in seed |
+| `milestone_note` | TEXT nullable | Shown on milestone days |
+
+RLS: all authenticated SELECT. Leaders/admins can INSERT + UPDATE + DELETE.
 
 ### `completions`
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | UUID PK | |
-| `user_id` | UUID FK | → `profiles.id` |
+| `user_id` | UUID FK | → `profiles.id` CASCADE |
 | `quest_day_id` | UUID FK | → `quest_days.id` |
-| `answer_1/2/3` | TEXT | Reflection answers |
-| `xp_earned` | INT | Calculated client-side, validated server-side |
-| `completed_at` | TIMESTAMPTZ | Defaults to NOW() |
+| `answer_1/2/3` | TEXT NOT NULL | Reflection answers |
+| `xp_earned` | INT NOT NULL | Total XP including bonuses |
+| `completed_at` | TIMESTAMPTZ | Default NOW() |
 | UNIQUE | (user_id, quest_day_id) | Prevents re-submission |
 
-### RLS Policies
-- `profiles`: SELECT/INSERT/UPDATE own row only
-- `quests`: SELECT all (public)
-- `quest_days`: SELECT all (public)
-- `completions`: SELECT own row; INSERT own row only; no UPDATE/DELETE
+RLS: own-row SELECT + INSERT. Leaders/admins can also SELECT all.
 
-### SQL Functions
-- `xp_to_level(p_xp INT) → TEXT` — pure function, maps XP to level title
-- `complete_reading(p_quest_day_id, p_answer_1/2/3, p_xp_earned) → JSON` — SECURITY DEFINER. Atomically inserts completion + updates profile streak/XP. Returns `{ new_streak, new_xp, new_level }`.
+### `friendships`
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID PK | |
+| `user_a` | UUID FK | Initiator → `profiles.id` CASCADE |
+| `user_b` | UUID FK | Recipient → `profiles.id` CASCADE |
+| `mutual_streak` | INT | Default 0 |
+| `status` | TEXT | `'pending'` \| `'accepted'` |
+| `created_at` | TIMESTAMPTZ | |
+| UNIQUE | (user_a, user_b) | |
+
+RLS: both parties + leaders can SELECT; user_a inserts; user_b updates; either deletes.
+
+### `nudges`
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID PK | |
+| `from_user` | UUID FK | → `profiles.id` CASCADE |
+| `to_user` | UUID FK | → `profiles.id` CASCADE |
+| `quest_day_id` | UUID FK | → `quest_days.id` CASCADE |
+| `nudged_at` | TIMESTAMPTZ | Default NOW() |
+
+RLS: sender + receiver + leaders can SELECT; sender can INSERT.
+
+### `badges`
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID PK | |
+| `name` | TEXT NOT NULL | e.g. "Week Warrior" |
+| `description` | TEXT nullable | |
+| `icon` | TEXT nullable | Emoji |
+| `badge_type` | TEXT | `'streak'` \| `'quest'` \| `'monthly'` \| `'special'` |
+| `requirement_value` | INT nullable | e.g. 7 for "Week Warrior" |
+| `created_at` | TIMESTAMPTZ | |
+
+RLS: all authenticated SELECT.
+
+### `user_badges`
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID PK | |
+| `user_id` | UUID FK | → `profiles.id` CASCADE |
+| `badge_id` | UUID FK | → `badges.id` CASCADE |
+| `earned_at` | TIMESTAMPTZ | Default NOW() |
+| UNIQUE | (user_id, badge_id) | |
+
+RLS: own-row + leaders can SELECT; INSERT only via `check_and_award_badges` SECURITY DEFINER.
+
+### `announcements`
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID PK | |
+| `title` | TEXT NOT NULL | |
+| `body` | TEXT nullable | |
+| `created_by` | UUID FK | → `profiles.id` |
+| `is_active` | BOOLEAN | Default true |
+| `created_at` | TIMESTAMPTZ | |
+| `expires_at` | TIMESTAMPTZ nullable | Auto-hidden after this date |
+
+RLS: all authenticated SELECT; leaders/admins INSERT + UPDATE + DELETE.
+
+### `streak_freezes_used`
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID PK | |
+| `user_id` | UUID FK | → `profiles.id` CASCADE |
+| `used_on` | DATE NOT NULL | |
+| `created_at` | TIMESTAMPTZ | |
+| UNIQUE | (user_id, used_on) | |
+
+RLS: own-row SELECT; INSERT only via `use_streak_freeze` SECURITY DEFINER.
+
+### SQL Functions / RPCs
+
+| Function | Security | Description |
+|----------|----------|-------------|
+| `xp_to_level(p_xp)` | — | IMMUTABLE. Maps XP → level title |
+| `handle_new_user()` | DEFINER | Trigger on auth.users INSERT. Creates profile + invite_code |
+| `generate_invite_code()` | — | Returns random 8-char uppercase string |
+| `complete_reading(quest_day_id, answer_1-3, xp_earned)` | DEFINER | Atomic: insert completion + update streak/XP/level + milestone bonus (+50) + quest completion bonus (+200) + auto-award freeze every 7 days + award badges + update mutual streaks. Returns `{new_streak, new_xp, new_level, new_badges, xp_earned, milestone_bonus, quest_complete, freeze_earned}` |
+| `check_and_award_badges(user_id)` | DEFINER | Evaluates all badge conditions, returns JSONB array of newly earned |
+| `send_nudge(to_user_id, quest_day_id)` | DEFINER | Inserts nudge (max 1/day per pair), triggers badge check |
+| `update_mutual_streaks(user_id)` | DEFINER | Increments or resets mutual_streak for all accepted friendships |
+| `use_streak_freeze()` | DEFINER | Uses one freeze if streak is about to break (2+ day gap). Returns `{freeze_used, remaining_freezes}` |
 
 ---
 
@@ -261,7 +359,9 @@ All tables live in `public` schema. Run `supabase/migrations/001_schema.sql` to 
 | Base (always) | +20 |
 | Before noon local time ("Early Bird") | +5 |
 | Saturday or Sunday ("Weekend") | +10 |
-| **Max possible per day** | **35** |
+| Milestone day bonus | +50 |
+| Quest completion bonus | +200 |
+| **Max possible per day** | **35** (base) or **85** (milestone + quest completion) |
 
 ### Level titles
 | XP Range | Title |
@@ -277,7 +377,29 @@ All tables live in `public` schema. Run `supabase/migrations/001_schema.sql` to 
 - `last_completed_at` was **yesterday** → `current_streak + 1`
 - `last_completed_at` was **today** → error: already completed
 - `last_completed_at` was **older than yesterday** (or null) → reset to 1
+- Every **7 consecutive days** → auto-award 1 streak freeze
 - Dates compared in UTC in the RPC; client-side display uses local time
+
+### Streak freeze
+- Auto-earned every 7-day streak milestone
+- Used when 2+ day gap detected (missed yesterday)
+- Sets `last_completed_at` to yesterday, preserving the streak
+- One freeze per day max
+
+### Badges (11 seeded)
+| Name | Type | Requirement |
+|------|------|-------------|
+| Week Warrior | streak | 7 days |
+| Two-Week Titan | streak | 14 days |
+| Monthly Master | streak | 30 days |
+| Iron Will | streak | 60 days |
+| Unstoppable | streak | 90 days |
+| Half-Year Hero | streak | 180 days |
+| Legendary | streak | 365 days |
+| First Steps | special | 1 completion |
+| Friendly | special | 1 accepted friendship |
+| Encourager | special | 1 nudge sent |
+| Matthew Scholar | quest | Complete "Journey Through Matthew" |
 
 ---
 
@@ -286,12 +408,13 @@ All tables live in `public` schema. Run `supabase/migrations/001_schema.sql` to 
 | Path | Component | Auth | Notes |
 |------|-----------|------|-------|
 | `/auth` | AuthPage | Public | Magic link + Google OAuth |
-| `/onboarding` | OnboardingPage | Protected | Set display name |
-| `/` | HomePage | Protected | Daily reading hub |
-| `/quests` | QuestsPage | Protected | Active quest card |
-| `/friends` | FriendsPage | Protected | "Coming Soon" |
-| `/profile` | ProfilePage | Protected | Stats, calendar, sign out |
-| `/read/:questDayId` | ReadingFlowPage | Protected | Full-screen, no bottom nav |
+| `/onboarding` | OnboardingPage | Protected | Set display name (first sign-in) |
+| `/` | HomePage | Protected | Daily reading hub + announcements + freeze modal |
+| `/quests` | QuestsPage | Protected | Active quests + journey map + completed quests |
+| `/friends` | FriendsPage | Protected | Invite code, requests, friend list + nudge |
+| `/profile` | ProfilePage | Protected | Stats, calendar, badges, freeze count |
+| `/read/:questDayId` | ReadingFlowPage | Protected | Full-screen 5-7 step reading flow |
+| `/admin` | AdminPage | Leader/Admin | Quest builder, engagement, announcements |
 | `/*` | — | — | Redirects to `/` |
 
 ---
@@ -325,6 +448,8 @@ Borders:         border-tq-border (#334155)
 **Animation classes:**
 - `.animate-fire-pulse` — subtle scale pulse on flame icons
 - `.animate-gold-pulse` — pulsing ring on today's unfinished streak circle
+- `.animate-xp-flyup` — XP earned fly-up and fade
+- `.animate-streak-bounce` — streak count-up bounce
 
 **Typography:** Nunito. Key sizes: 48px/900 (display/streak count) · 28px/800 (H1) · 16px/400 (body, inputs) · 12px min.
 
@@ -335,32 +460,48 @@ Borders:         border-tq-border (#334155)
 ## 10. IMPORTANT TECHNICAL NOTES
 
 ### Supabase client
-The client in `src/lib/supabase.ts` uses `createClient()` **without** a Database generic type. This is because the handwritten `Database` interface in `src/types/database.ts` doesn't fully satisfy Supabase v2's internal `GenericSchema` constraint. **All query results are explicitly cast** at each call site using the types exported from `database.ts`. This is intentional and correct — do not "fix" it by adding the generic back without first generating types via the Supabase CLI.
+The client in `src/lib/supabase.ts` uses `createClient()` **without** a Database generic type. **All query results are explicitly cast** at each call site using types from `database.ts`. This is intentional — do not add the generic back without first generating types via the Supabase CLI.
+
+### useAuth is a React Context
+`AuthProvider` lives in `src/hooks/useAuth.tsx` and is mounted at the top of `App.tsx` above `<BrowserRouter>`. All components share one auth state instance. Do NOT revert to a plain hook — independent state per component caused onboarding redirect loops.
+
+Key exports: `user, session, profile, loading, isNewUser, signOut, refreshProfile, patchProfile`
+- `patchProfile(updates)` — synchronously merges partial updates into in-memory profile state (no DB call). Used by OnboardingPage before `navigate()` to avoid stale-state redirect loops.
+- `refreshProfile()` — re-fetches profile from DB and updates state.
+
+### Onboarding detection
+`ProtectedRoute` reads `profile.onboarding_completed` directly from the shared context profile object. `OnboardingPage` calls `patchProfile({ onboarding_completed: true })` before navigating to `/`.
+
+### `.maybeSingle()` for nullable lookups
+Any Supabase query that may return 0 rows must use `.maybeSingle()`, not `.single()`. `.single()` returns 406 on no match.
+
+### Profiles RLS
+All authenticated users can read any profile row (`profiles_select_authenticated` policy). This is required for invite code lookup and friend streak display.
+
+### AdminRoute
+Waits for both `user` and `profile` to be loaded before checking `profile.role`. Without the null-profile guard, a race condition between auth loading and profile fetching caused premature redirect to `/`.
 
 ### Seed data — passage text
-Days 1–5 have real NIV passage text in the seed. Days 6–30 have placeholder text (`[Passage text coming soon] ...summary`). Before launch, populate the remaining passages by updating `passage_text` in the `quest_days` table.
+All 30 days of "Journey Through Matthew" have passage summaries filled in.
 
 ### Reading flow — "already completed" guard
-The `complete_reading` RPC will throw an error if the user tries to submit twice on the same day. The `ReadingFlowPage` catches this error and still advances to the celebration screen (so the user doesn't see an error on a day they already completed earlier).
+The `complete_reading` RPC throws if the user already completed today. `ReadingFlowPage` catches this and still shows the celebration screen.
 
 ### Quest day lookup
-`useQuest.ts` determines today's day number by computing the diff in calendar days between `quest.start_date` and today, clamped to 1–30. If the app is used before the quest starts or after it ends, it clamps to day 1 or day 30 respectively.
+`useQuest.ts` determines today's day number by computing the diff in calendar days between `quest.start_date` and today, clamped to 1–totalDays.
 
-### ProtectedRoute
-Does NOT handle the onboarding redirect automatically. The onboarding screen is navigated to manually after Google OAuth sign-in if the user's `display_name` is still their email prefix. This is a known gap — in Phase 2, add logic to `useAuth` to detect first-time users and redirect to `/onboarding`.
+### Vercel deployment
+`vercel.json` has an SPA rewrite rule (`/(.*) → /index.html`) so client-side routes like `/admin` are served correctly. Without this, direct navigation to non-root paths returns 404.
 
 ---
 
-## 11. WHAT TO DO NEXT (Phase 2 priorities)
+## 11. WHAT TO DO NEXT (Phase 4+)
 
-1. **Populate passage text** — fill in days 6–30 in `quest_days.passage_text`
-2. **Vercel deploy** — connect GitHub repo, add env vars in Vercel dashboard
-3. **PWA icons** — replace placeholder icon paths in `vite.config.ts` with real TQ-branded PNGs at `/public/icons/icon-192.png` and `icon-512.png`
-4. **First-time user detection** — in `useAuth`, check if `display_name` equals the email prefix and redirect to `/onboarding` automatically
-5. **Onboarding redirect after magic link** — handle the case where user returns from magic link email and hasn't set a name yet
-6. **Friend system** — see blueprint §3.4 and Phase 2 scope
-7. **Push notifications** — Supabase Edge Functions + Web Push API
-8. **Badge system** — `badges` + `user_badges` tables (skip Phase 1)
+1. **Push notifications** — Supabase Edge Functions + Web Push API (data model ready via `push_subscription`)
+2. **QR code invite sharing** — generate QR from invite code for easy friend-adding
+3. **Offline reading** — advanced service worker caching for offline passage access
+4. **Onboarding carousel** — multi-step intro explaining the app
+5. **Group/team system** — organize youth into teams for group competitions
 
 ---
 
