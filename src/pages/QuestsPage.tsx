@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Compass, ChevronDown, ChevronUp, Trophy } from 'lucide-react'
 import { useQuestHistory } from '../hooks/useQuestHistory'
 import { useQuest } from '../hooks/useQuest'
@@ -12,15 +12,14 @@ export function QuestsPage() {
   const { activeQuests, completedQuests, completedDayIds, loading, refetch } = useQuestHistory()
   const { dayNumber } = useQuest()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [expandedMaps, setExpandedMaps] = useState<Set<string>>(new Set())
 
-  // Refetch when page becomes visible (navigating back from reading flow)
-  const handleFocus = useCallback(() => { refetch() }, [refetch])
+  // Refetch when navigating to this page (location.key changes on each navigation)
   useEffect(() => {
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
-  }, [handleFocus])
+    refetch()
+  }, [location.key]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleMap(questId: string) {
     setExpandedMaps(prev => {

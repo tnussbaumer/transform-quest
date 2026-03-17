@@ -85,7 +85,8 @@ export function ReadingFlowPage() {
       }, xpEarned)
       setResult(res)
       setNewBadges(res.new_badges ?? [])
-    } catch {
+    } catch (err) {
+      console.error('complete_reading RPC failed:', err)
       setResult({
         new_streak: profile?.current_streak ?? 1,
         new_xp: profile?.total_xp ?? 0,
