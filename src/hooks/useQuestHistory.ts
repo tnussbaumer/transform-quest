@@ -30,24 +30,27 @@ export function useQuestHistory(): QuestHistoryState {
       if (!user) return
 
       // Fetch all quests
-      const { data: questsData } = await supabase
+      const { data: questsData, error: questsErr } = await supabase
         .from('quests')
         .select('*')
         .order('start_date', { ascending: false })
+      if (questsErr) console.error('useQuestHistory: quests query failed', questsErr)
       const quests = (questsData ?? []) as Quest[]
 
       // Fetch all quest_days
-      const { data: daysData } = await supabase
+      const { data: daysData, error: daysErr } = await supabase
         .from('quest_days')
         .select('*')
         .order('day_number', { ascending: true })
+      if (daysErr) console.error('useQuestHistory: quest_days query failed', daysErr)
       const allDays = (daysData ?? []) as QuestDay[]
 
       // Fetch user's completions
-      const { data: compData } = await supabase
+      const { data: compData, error: compErr } = await supabase
         .from('completions')
         .select('*')
         .eq('user_id', user.id)
+      if (compErr) console.error('useQuestHistory: completions query failed', compErr)
       const completions = (compData ?? []) as Completion[]
 
       const dayIds = new Set(completions.map(c => c.quest_day_id))
