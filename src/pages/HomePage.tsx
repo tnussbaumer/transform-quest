@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Flame, Compass, Snowflake, Shield } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
@@ -5,6 +6,7 @@ import { useQuest } from '../hooks/useQuest'
 import { useProfile } from '../hooks/useProfile'
 import { useFriends } from '../hooks/useFriends'
 import { useStreakFreeze } from '../hooks/useStreakFreeze'
+import { supabase } from '../lib/supabase'
 import { TodaysReadingCard } from '../components/home/TodaysReadingCard'
 import { WeeklyStreakBar } from '../components/home/WeeklyStreakBar'
 import { QuickStatsRow } from '../components/home/QuickStatsRow'
@@ -25,6 +27,20 @@ export function HomePage() {
   const displayName = profile?.display_name ?? 'friend'
   const streak = fullProfile?.current_streak ?? profile?.current_streak ?? 0
   const totalXp = fullProfile?.total_xp ?? profile?.total_xp ?? 0
+
+  const [completedTodayIds, setCompletedTodayIds] = useState<Set<string>>(new Set())
+
+  // Fetch who completed today's quest day (for friend activity snippet)
+  useEffect(() => {
+    if (!questDay?.id) return
+    supabase
+      .from('completions')
+      .select('user_id')
+      .eq('quest_day_id', questDay.id)
+      .then(({ data }) => {
+        setCompletedTodayIds(new Set(((data as { user_id: string }[]) ?? []).map(c => c.user_id)))
+      })
+  }, [questDay?.id])
 
   const loading = questLoading
 
@@ -163,7 +179,7 @@ export function HomePage() {
 
       {/* Friend Activity */}
       <div className="animate-fade-up" style={{ animationDelay: '350ms' }}>
-        <FriendActivitySnippet friends={friends} />
+        <FriendActivitySnippet friends={friends} completedTodayIds={completedTodayIds} />
       </div>
     </div>
   )

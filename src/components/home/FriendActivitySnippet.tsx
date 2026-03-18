@@ -1,14 +1,14 @@
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
-import { isCompletedToday } from '../../lib/streakUtils'
 import { Avatar } from '../profile/Avatar'
 import type { FriendWithProfile } from '../../types/database'
 
 interface FriendActivitySnippetProps {
   friends: FriendWithProfile[]
+  completedTodayIds?: Set<string>
 }
 
-export function FriendActivitySnippet({ friends }: FriendActivitySnippetProps) {
+export function FriendActivitySnippet({ friends, completedTodayIds }: FriendActivitySnippetProps) {
   const navigate = useNavigate()
 
   if (friends.length === 0) {
@@ -30,7 +30,9 @@ export function FriendActivitySnippet({ friends }: FriendActivitySnippetProps) {
     )
   }
 
-  const completedCount = friends.filter(f => isCompletedToday(f.friend.last_completed_at)).length
+  const completedCount = completedTodayIds
+    ? friends.filter(f => completedTodayIds.has(f.friend.id)).length
+    : 0
   const displayFriends = friends.slice(0, 3)
 
   return (
