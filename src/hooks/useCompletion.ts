@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { isCompletedToday } from '../lib/streakUtils'
 import type { CompleteReadingResult } from '../types/database'
 
 interface SubmitAnswers {
@@ -36,13 +35,14 @@ export function useCompletion(questDayId: string | undefined): CompletionState {
 
       const { data } = await supabase
         .from('completions')
-        .select('completed_at')
+        .select('id')
         .eq('user_id', user.id)
         .eq('quest_day_id', questDayId)
         .maybeSingle()
 
-      const row = data as { completed_at: string } | null
-      setCompleted(row ? isCompletedToday(row.completed_at) : false)
+      // Just check existence — if a completion row exists for this quest day,
+      // the user has completed it. No date check needed (matches JourneyMap logic).
+      setCompleted(!!data)
     } finally {
       setLoading(false)
     }
