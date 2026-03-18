@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Users, Flame, TrendingUp, BarChart3, Send, Trash2, MessageCircle, Lock, Globe } from 'lucide-react'
 import { useAdminStats } from '../../hooks/useAdminStats'
-import { isCompletedToday } from '../../lib/streakUtils'
 import { supabase } from '../../lib/supabase'
 import { Avatar } from '../profile/Avatar'
 import { Card } from '../ui/Card'
@@ -21,7 +20,7 @@ interface AdminPost {
 }
 
 export function EngagementDashboard() {
-  const { totalUsers, activeToday, avgStreak, completionRate, profiles, loading } = useAdminStats()
+  const { totalUsers, activeToday, avgStreak, completionRate, profiles, completedTodayUserIds, loading } = useAdminStats()
   const [nudging, setNudging] = useState(false)
   const [nudgeResult, setNudgeResult] = useState<string | null>(null)
   const [recentPosts, setRecentPosts] = useState<AdminPost[]>([])
@@ -77,7 +76,7 @@ export function EngagementDashboard() {
     .filter(p => p.current_streak > 0)
     .slice(0, 10)
 
-  const inactiveUsers = profiles.filter(p => !isCompletedToday(p.last_completed_at))
+  const inactiveUsers = profiles.filter(p => !completedTodayUserIds.has(p.id))
 
   async function handleNudgeAll() {
     setNudging(true)
