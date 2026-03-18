@@ -1,22 +1,55 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate } from 'react-router-dom'
-import { Mail } from 'lucide-react'
+import { Navigate, useSearchParams } from 'react-router-dom'
+import { Mail, AlertTriangle, Copy, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 
+const LAUNCH_CODE = import.meta.env.VITE_LAUNCH_CODE as string | undefined
+const ACCESS_KEY = 'tq-access-granted'
+
+/** Detects non-Safari browsers on iOS */
+function isNonSafariIOS(): boolean {
+  const ua = navigator.userAgent
+  if (!/iPhone|iPad|iPod/i.test(ua)) return false
+  return /CriOS|FxiOS|Instagram|FBAV|Twitter|LinkedIn/i.test(ua)
+}
+
 export function AuthPage() {
   const { user, loading } = useAuth()
+  const [searchParams] = useSearchParams()
+  const returnTo = searchParams.get('returnTo') || '/'
+
   const [email, setEmail] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [oauthLoading, setOauthLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Already signed in → go home
+  // Invite-code gate state
+  const gateEnabled = !!LAUNCH_CODE
+  const [accessGranted, setAccessGranted] = useState(() =>
+    !gateEnabled || localStorage.getItem(ACCESS_KEY) === 'true'
+  )
+  const [accessCode, setAccessCode] = useState('')
+  const [accessError, setAccessError] = useState('')
+  const [urlCopied, setUrlCopied] = useState(false)
+
+  // Already signed in → go to returnTo
   if (!loading && user) {
-    return <Navigate to="/" replace />
+    return <Navigate to={returnTo} replace />
+  }
+
+  function handleAccessSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (accessCode.trim().toUpperCase() === LAUNCH_CODE?.toUpperCase()) {
+      localStorage.setItem(ACCESS_KEY, 'true')
+      setAccessGranted(true)
+      setAccessError('')
+    } else {
+      setAccessError('Invalid code — ask your youth leader for the access code')
+    }
   }
 
   async function handleMagicLink(e: FormEvent) {
@@ -26,7 +59,7 @@ export function AuthPage() {
     setError('')
     const { error: err } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: `${window.location.origin}/` },
+      options: { emailRedirectTo: `${window.location.origin}${returnTo}` },
     })
     setSending(false)
     if (err) {
@@ -41,13 +74,21 @@ export function AuthPage() {
     setError('')
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/` },
+      options: { redirectTo: `${window.location.origin}${returnTo}` },
     })
     if (err) {
       setError(err.message)
       setOauthLoading(false)
     }
   }
+
+  async function handleCopyUrl() {
+    await navigator.clipboard.writeText(window.location.origin)
+    setUrlCopied(true)
+    setTimeout(() => setUrlCopied(false), 2000)
+  }
+
+  const showNonSafariWarning = isNonSafariIOS()
 
   return (
     <div className="min-h-screen bg-tq-bg flex flex-col items-center justify-center px-6 py-12">
@@ -63,7 +104,57 @@ export function AuthPage() {
           </p>
         </div>
 
-        {sent ? (
+        {/* Non-Safari iOS warning */}
+        {showNonSafariWarning && (
+          <div className="bg-tq-surface rounded-2xl p-4 border border-tq-gold/40 space-y-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={18} className="text-tq-gold flex-shrink-0" />
+              <p className="text-sm font-bold text-tq-gold">Open in Safari</p>
+            </div>
+            <p className="text-tq-text-sec text-sm">
+              For the best experience, open this link in Safari. Only Safari can install web apps on iPhone.
+            </p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-xs bg-tq-bg rounded-lg px-3 py-2 text-tq-teal truncate">
+                {window.location.hostname}
+              </code>
+              <button
+                onClick={handleCopyUrl}
+                className="flex items-center gap-1 px-3 py-2 rounded-lg bg-tq-teal text-tq-bg text-xs font-bold"
+              >
+                {urlCopied ? <Check size={14} /> : <Copy size={14} />}
+                {urlCopied ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Invite-code gate */}
+        {gateEnabled && !accessGranted ? (
+          <div className="bg-tq-surface rounded-2xl p-6 border border-tq-border space-y-4">
+            <div className="text-center">
+              <h2 className="text-lg font-bold text-tq-text">Enter your access code</h2>
+              <p className="text-tq-text-sec text-sm mt-1">Ask your youth leader for the code.</p>
+            </div>
+            <form onSubmit={handleAccessSubmit} className="space-y-3">
+              <Input
+                type="text"
+                placeholder="Access code"
+                value={accessCode}
+                onChange={e => setAccessCode(e.target.value)}
+                autoFocus
+                autoComplete="off"
+                aria-label="Access code"
+              />
+              {accessError && (
+                <p className="text-tq-error text-sm">{accessError}</p>
+              )}
+              <Button type="submit" fullWidth disabled={!accessCode.trim()}>
+                Continue
+              </Button>
+            </form>
+          </div>
+        ) : sent ? (
           /* Success state */
           <div className="bg-tq-surface rounded-2xl p-6 text-center space-y-3 border border-tq-border">
             <div className="w-12 h-12 rounded-full bg-tq-teal/20 flex items-center justify-center mx-auto">

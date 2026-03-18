@@ -25,11 +25,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isNewUser, setIsNewUser] = useState(false)
 
   async function fetchProfile(authUser: User) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', authUser.id)
       .single()
+    if (error) {
+      // Session may be expired — try to refresh, auth listener will handle redirect
+      console.warn('Profile fetch failed:', error.message)
+      return
+    }
     const p = data as Profile | null
     setProfile(p)
     setIsNewUser(!p?.onboarding_completed)

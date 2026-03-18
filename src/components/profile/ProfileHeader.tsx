@@ -22,7 +22,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
       <Avatar profile={profile} size="lg" />
 
       <div className="text-center">
-        <h1 className="text-2xl font-extrabold text-tq-text">{profile.display_name}</h1>
+        <h1 className="text-2xl font-extrabold text-tq-text truncate max-w-[280px]">{profile.display_name}</h1>
         <p className="text-tq-teal text-sm font-bold mt-0.5">{profile.level_title}</p>
 
         {/* XP Progress Bar */}

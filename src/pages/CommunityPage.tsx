@@ -215,3 +215,5 @@ export function CommunityPage() {
     </div>
   )
 }
+
+export default CommunityPage

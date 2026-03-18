@@ -176,3 +176,5 @@ export function QuestsPage() {
     </div>
   )
 }
+
+export default QuestsPage

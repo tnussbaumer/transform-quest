@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, UserPlus } from 'lucide-react'
+import { Search, UserPlus, QrCode } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useFriends } from '../../hooks/useFriends'
 import { useNudge } from '../../hooks/useNudge'
@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase'
 import { Avatar } from '../profile/Avatar'
 import { PendingRequests } from '../friends/PendingRequests'
 import { FriendsList } from '../friends/FriendsList'
+import { QRCodeModal } from './QRCodeModal'
 import { Card } from '../ui/Card'
 import { Input } from '../ui/Input'
 import type { DiscoverableUser } from '../../hooks/useFriends'
@@ -20,6 +21,7 @@ export function FriendsTab() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sendingTo, setSendingTo] = useState<string | null>(null)
   const [completedTodayIds, setCompletedTodayIds] = useState<Set<string>>(new Set())
+  const [qrModalOpen, setQrModalOpen] = useState(false)
 
   // Fetch which friends completed today's quest day
   useEffect(() => {
@@ -57,6 +59,24 @@ export function FriendsTab() {
 
   return (
     <div className="space-y-6">
+      {/* My QR Code button */}
+      {profile.invite_code && (
+        <button
+          onClick={() => setQrModalOpen(true)}
+          className="w-full flex items-center gap-3 p-4 rounded-2xl bg-tq-surface border border-tq-border/50 hover:bg-tq-surface-2 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-xl bg-tq-purple/20 flex items-center justify-center flex-shrink-0">
+            <QrCode size={20} className="text-tq-purple" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-bold text-tq-text">My QR Code</p>
+            <p className="text-xs text-tq-text-muted">Friends can scan to add you</p>
+          </div>
+        </button>
+      )}
+
+      <QRCodeModal open={qrModalOpen} onClose={() => setQrModalOpen(false)} />
+
       {/* Incoming requests */}
       <PendingRequests
         requests={pendingIncoming}
@@ -153,7 +173,7 @@ export function FriendsTab() {
             <FriendsList
               friends={friends}
               hasNudgedToday={hasNudgedToday}
-              onNudge={nudgeFriend}
+              onNudge={(toUserId, questDayId) => nudgeFriend(toUserId, questDayId, profile?.display_name)}
               currentQuestDayId={questDay?.id}
               completedTodayIds={completedTodayIds}
             />

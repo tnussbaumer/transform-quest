@@ -12,6 +12,8 @@ import { WeeklyStreakBar } from '../components/home/WeeklyStreakBar'
 import { QuickStatsRow } from '../components/home/QuickStatsRow'
 import { FriendActivitySnippet } from '../components/home/FriendActivitySnippet'
 import { AnnouncementBanner } from '../components/home/AnnouncementBanner'
+import { NotificationPrompt } from '../components/home/NotificationPrompt'
+import { InstallBanner } from '../components/home/InstallBanner'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 
@@ -114,6 +116,12 @@ export function HomePage() {
       {/* Announcements */}
       <AnnouncementBanner />
 
+      {/* Install Banner (shows when app not installed) */}
+      <InstallBanner />
+
+      {/* Notification Prompt (shows after 2+ completions) */}
+      <NotificationPrompt />
+
       {/* Today's Reading Card */}
       {loading ? (
         <div className="animate-fade-up" style={{ animationDelay: '50ms' }}>
@@ -143,9 +151,9 @@ export function HomePage() {
               <div className="w-16 h-16 rounded-full bg-tq-surface-2 flex items-center justify-center">
                 <Compass size={32} className="text-tq-text-muted" />
               </div>
-              <p className="text-tq-text font-bold text-lg">No active quest yet</p>
+              <p className="text-tq-text font-bold text-lg">No active quest right now</p>
               <p className="text-tq-text-sec text-sm max-w-[240px]">
-                Your next adventure is coming soon. Check back later!
+                Check back soon!
               </p>
             </div>
           </Card>

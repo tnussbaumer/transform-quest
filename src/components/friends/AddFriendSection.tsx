@@ -58,10 +58,11 @@ export function AddFriendSection({ profile, onAdd }: AddFriendSectionProps) {
         </div>
         <Button
           type="submit"
-          disabled={adding || !code.trim()}
+          disabled={!code.trim()}
+          loading={adding}
           className="flex-shrink-0"
         >
-          {adding ? '…' : 'Add'}
+          Add
         </Button>
       </form>
 
