@@ -1,4 +1,5 @@
-import { Flame, Compass, Snowflake } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Flame, Compass, Snowflake, Shield } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useQuest } from '../hooks/useQuest'
 import { useCompletion } from '../hooks/useCompletion'
@@ -20,7 +21,9 @@ export function HomePage() {
   const { completions, profile: fullProfile } = useProfile()
   const { friends } = useFriends()
   const { needsFreeze, freezesAvailable, useFreeze, dismiss } = useStreakFreeze()
+  const navigate = useNavigate()
 
+  const isAdmin = profile?.role === 'leader' || profile?.role === 'admin'
   const displayName = profile?.display_name ?? 'friend'
   const streak = fullProfile?.current_streak ?? profile?.current_streak ?? 0
   const totalXp = fullProfile?.total_xp ?? profile?.total_xp ?? 0
@@ -39,9 +42,20 @@ export function HomePage() {
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
         </div>
-        <div className="flex items-center gap-1.5 bg-tq-surface rounded-xl px-3 py-2 border border-tq-border/50">
-          <Flame size={20} className="text-tq-gold animate-fire-pulse" aria-hidden="true" />
-          <span className="text-lg font-extrabold text-tq-gold tabular-nums">{streak}</span>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="p-2 rounded-xl bg-tq-surface border border-tq-border/50 text-tq-purple hover:text-tq-purple-light hover:bg-tq-surface-2 transition-colors"
+              aria-label="Admin Dashboard"
+            >
+              <Shield size={20} />
+            </button>
+          )}
+          <div className="flex items-center gap-1.5 bg-tq-surface rounded-xl px-3 py-2 border border-tq-border/50">
+            <Flame size={20} className="text-tq-gold animate-fire-pulse" aria-hidden="true" />
+            <span className="text-lg font-extrabold text-tq-gold tabular-nums">{streak}</span>
+          </div>
         </div>
       </header>
 
