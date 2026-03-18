@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useQuest } from '../hooks/useQuest'
-import { useCompletion } from '../hooks/useCompletion'
 import { useCommunityFeed } from '../hooks/useCommunityFeed'
 import { WallPostCard } from '../components/community/WallPostCard'
 import { ComposeModal } from '../components/community/ComposeModal'
@@ -17,8 +16,7 @@ type Tab = 'wall' | 'friends'
 
 export function CommunityPage() {
   const { profile, refreshProfile } = useAuth()
-  const { quest, questDay, loading: questLoading } = useQuest()
-  const { isCompletedToday, loading: completionLoading } = useCompletion(questDay?.id)
+  const { quest, questDay, isCurrentDayCompleted, loading: questLoading } = useQuest()
   const { posts, loading: feedLoading, createPost, toggleReaction, deletePost } = useCommunityFeed(questDay?.id)
   const navigate = useNavigate()
 
@@ -44,7 +42,7 @@ export function CommunityPage() {
   }, [questDay?.id, profile?.id])
 
   async function handleOpenCompose() {
-    if (isCompletedToday) {
+    if (isCurrentDayCompleted) {
       // Always fetch fresh answers (they may have changed since last fetch)
       await fetchAnswers()
     }
@@ -73,8 +71,7 @@ export function CommunityPage() {
 
   if (!profile) return null
 
-  // Only wait for completion check if we actually have a quest day to check
-  const loading = questLoading || (!!questDay?.id && completionLoading)
+  const loading = questLoading
 
   return (
     <div className="px-4 py-6 space-y-4">
@@ -139,7 +136,7 @@ export function CommunityPage() {
               )}
 
               {/* Hasn't completed banner */}
-              {!isCompletedToday && (
+              {!isCurrentDayCompleted && (
                 <Card>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-tq-teal/20 flex items-center justify-center flex-shrink-0">
@@ -213,7 +210,7 @@ export function CommunityPage() {
         open={composeOpen}
         onClose={() => setComposeOpen(false)}
         onSubmit={handleCreatePost}
-        answers={isCompletedToday ? todaysAnswers : null}
+        answers={isCurrentDayCompleted ? todaysAnswers : null}
       />
     </div>
   )
