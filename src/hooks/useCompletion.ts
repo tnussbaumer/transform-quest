@@ -24,7 +24,9 @@ export function useCompletion(questDayId: string | undefined): CompletionState {
 
   const checkCompletion = useCallback(async () => {
     if (!questDayId) {
-      setLoading(false)
+      // Don't set loading=false here — questDayId may still be loading
+      // from useQuest. The page's loading flag should gate on questLoading
+      // for the "no quest day" case.
       return
     }
     setLoading(true)

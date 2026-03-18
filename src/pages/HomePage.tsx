@@ -28,7 +28,8 @@ export function HomePage() {
   const streak = fullProfile?.current_streak ?? profile?.current_streak ?? 0
   const totalXp = fullProfile?.total_xp ?? profile?.total_xp ?? 0
 
-  const loading = questLoading || completionLoading
+  // Only wait for completion check if we actually have a quest day to check
+  const loading = questLoading || (!!questDay?.id && completionLoading)
 
   return (
     <div className="px-4 py-6 space-y-6">
