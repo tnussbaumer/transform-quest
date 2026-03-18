@@ -3,6 +3,31 @@ import { X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Announcement } from '../../types/database'
 
+const URL_REGEX = /(https?:\/\/[^\s]+)/g
+
+function LinkifiedText({ text }: { text: string }) {
+  const parts = text.split(URL_REGEX)
+  return (
+    <>
+      {parts.map((part, i) =>
+        URL_REGEX.test(part) ? (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-tq-teal underline hover:text-tq-teal-light transition-colors break-all"
+          >
+            {part}
+          </a>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  )
+}
+
 export function AnnouncementBanner() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
@@ -39,7 +64,9 @@ export function AnnouncementBanner() {
           </button>
           <h3 className="text-tq-text font-bold text-sm pr-6">{a.title}</h3>
           {a.body && (
-            <p className="text-tq-text-sec text-sm mt-1">{a.body}</p>
+            <p className="text-tq-text-sec text-sm mt-1">
+              <LinkifiedText text={a.body} />
+            </p>
           )}
         </div>
       ))}
