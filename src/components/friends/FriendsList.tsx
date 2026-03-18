@@ -1,4 +1,3 @@
-import { Users } from 'lucide-react'
 import { FriendCard } from './FriendCard'
 import type { FriendWithProfile } from '../../types/database'
 
@@ -13,12 +12,10 @@ export function FriendsList({ friends, hasNudgedToday, onNudge, currentQuestDayI
   if (friends.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-8 text-center">
-        <div className="w-14 h-14 rounded-full bg-tq-surface-2 flex items-center justify-center">
-          <Users size={28} className="text-tq-text-muted" />
-        </div>
-        <p className="font-bold text-tq-text">No friends yet</p>
+        <div className="text-4xl mb-1">👥</div>
+        <p className="font-bold text-tq-text text-lg">No friends yet</p>
         <p className="text-tq-text-sec text-sm max-w-[240px]">
-          Head to the Friends tab and add people from your group!
+          Find people from your group above and add them as friends!
         </p>
       </div>
     )

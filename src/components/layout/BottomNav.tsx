@@ -22,16 +22,21 @@ export function BottomNav() {
             end={to === '/'}
             className={({ isActive }) =>
               [
-                'flex flex-col items-center justify-center gap-0.5',
-                'min-w-[56px] py-1 rounded-xl transition-colors duration-200',
-                isActive ? 'text-tq-teal' : 'text-tq-text-muted',
+                'flex flex-col items-center justify-center gap-0.5 relative',
+                'min-w-[56px] py-1.5 rounded-xl transition-all duration-200',
+                isActive
+                  ? 'text-tq-teal bg-tq-teal/10'
+                  : 'text-tq-text-muted hover:text-tq-text-sec',
               ].join(' ')
             }
           >
             {({ isActive }) => (
               <>
-                <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
                 <span className="text-[11px] font-semibold leading-none">{label}</span>
+                {isActive && (
+                  <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-tq-teal" />
+                )}
               </>
             )}
           </NavLink>

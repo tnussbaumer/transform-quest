@@ -1,10 +1,12 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { Loader2 } from 'lucide-react'
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'success'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant
   fullWidth?: boolean
+  loading?: boolean
   children: ReactNode
 }
 
@@ -22,6 +24,7 @@ const variantClasses: Record<Variant, string> = {
 export function Button({
   variant = 'primary',
   fullWidth = false,
+  loading = false,
   className = '',
   children,
   disabled,
@@ -35,14 +38,15 @@ export function Button({
         'transition-all duration-200 outline-none',
         variantClasses[variant],
         fullWidth ? 'w-full' : '',
-        disabled ? 'opacity-50 cursor-not-allowed' : '',
+        disabled || loading ? 'opacity-50 cursor-not-allowed' : '',
         className,
       ]
         .filter(Boolean)
         .join(' ')}
-      disabled={disabled}
+      disabled={disabled || loading}
       {...props}
     >
+      {loading && <Loader2 size={18} className="animate-spin" />}
       {children}
     </button>
   )
