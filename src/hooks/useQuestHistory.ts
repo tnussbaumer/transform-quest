@@ -34,10 +34,12 @@ export function useQuestHistory(): QuestHistoryState {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Fetch all quests
+      // Fetch only active quests (is_active = true)
+      // Inactive quests (not yet launched or disabled) are hidden from users
       const { data: questsData, error: questsErr } = await supabase
         .from('quests')
         .select('*')
+        .eq('is_active', true)
         .order('start_date', { ascending: false })
       if (questsErr) console.error('useQuestHistory: quests query failed', questsErr)
       const quests = (questsData ?? []) as Quest[]
