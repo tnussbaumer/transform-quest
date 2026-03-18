@@ -2,6 +2,7 @@ import { Check } from 'lucide-react'
 import { useFriends } from '../../hooks/useFriends'
 import { useNudge } from '../../hooks/useNudge'
 import { isCompletedToday } from '../../lib/streakUtils'
+import { Avatar } from '../profile/Avatar'
 import { Button } from '../ui/Button'
 import { ShareButton } from './ShareButton'
 import type { FriendWithProfile } from '../../types/database'
@@ -29,11 +30,7 @@ function FriendRow({
 
   return (
     <div className="flex items-center gap-3 py-2.5">
-      <div className="w-9 h-9 rounded-full bg-tq-purple flex-shrink-0 flex items-center justify-center">
-        <span className="text-xs font-extrabold text-white">
-          {friend.display_name.charAt(0).toUpperCase()}
-        </span>
-      </div>
+      <Avatar profile={friend} size="sm" />
       <p className="flex-1 font-bold text-tq-text text-sm truncate">{friend.display_name}</p>
       {completed ? (
         <span className="flex items-center gap-1 text-xs font-semibold text-tq-success flex-shrink-0">
@@ -99,13 +96,11 @@ export function FriendStreaksStep({
 
   return (
     <div className="flex flex-col min-h-screen px-4">
-      {/* Header */}
       <div className="pt-6 pb-4">
         <h2 className="text-2xl font-extrabold text-tq-gold">Your Friend Streaks</h2>
         <p className="text-tq-text-sec text-sm mt-1">Encourage friends who haven&apos;t read yet</p>
       </div>
 
-      {/* Friend lists */}
       <div className="flex-1 space-y-4 overflow-y-auto">
         {notDone.length > 0 && (
           <div>
@@ -144,7 +139,6 @@ export function FriendStreaksStep({
         )}
       </div>
 
-      {/* Bottom actions */}
       <div className="pb-8 pt-4 space-y-3">
         <ShareButton
           dayNumber={dayNumber}

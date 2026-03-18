@@ -18,7 +18,7 @@ export function FriendsList({ friends, hasNudgedToday, onNudge, currentQuestDayI
         </div>
         <p className="font-bold text-tq-text">No friends yet</p>
         <p className="text-tq-text-sec text-sm max-w-[240px]">
-          Share your invite code above to connect with friends from your group.
+          Head to the Friends tab and add people from your group!
         </p>
       </div>
     )

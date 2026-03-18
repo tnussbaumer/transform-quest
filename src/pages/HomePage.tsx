@@ -69,9 +69,9 @@ export function HomePage() {
               </div>
             </div>
             <div>
-              <h2 className="text-lg font-extrabold text-tq-text">Streak at risk!</h2>
+              <h2 className="text-lg font-extrabold text-tq-text">The Two-Day Rule</h2>
               <p className="text-tq-text-sec text-sm mt-1">
-                You missed yesterday. Use a streak freeze to save your streak?
+                Mistakes happen, but don&apos;t let it happen twice in a row! Use a freeze to save your streak.
               </p>
               <p className="text-tq-gold text-sm font-bold mt-1">
                 {freezesAvailable} freeze{freezesAvailable !== 1 ? 's' : ''} available

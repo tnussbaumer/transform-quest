@@ -4,6 +4,8 @@ export interface Profile {
   id: string
   display_name: string
   avatar_url: string | null
+  avatar_type: 'preset' | 'custom'
+  avatar_preset: string
   role: 'youth' | 'leader' | 'admin'
   current_streak: number
   longest_streak: number
@@ -126,6 +128,8 @@ export interface FriendProfile {
   id: string
   display_name: string
   avatar_url: string | null
+  avatar_type: 'preset' | 'custom'
+  avatar_preset: string
   current_streak: number
   last_completed_at: string | null
   level_title: string

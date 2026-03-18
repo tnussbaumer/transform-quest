@@ -3,6 +3,7 @@ import { Users, Flame, TrendingUp, BarChart3, Send } from 'lucide-react'
 import { useAdminStats } from '../../hooks/useAdminStats'
 import { isCompletedToday } from '../../lib/streakUtils'
 import { supabase } from '../../lib/supabase'
+import { Avatar } from '../profile/Avatar'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 
@@ -141,9 +142,7 @@ export function EngagementDashboard() {
                   <span className="w-6 text-center text-sm font-bold text-tq-text-muted">
                     {i + 1}
                   </span>
-                  <div className="w-8 h-8 rounded-full bg-tq-purple/30 flex items-center justify-center text-sm font-bold text-tq-text">
-                    {p.display_name.charAt(0).toUpperCase()}
-                  </div>
+                  <Avatar profile={p} size="sm" />
                   <span className="flex-1 text-sm font-semibold text-tq-text truncate">
                     {p.display_name}
                   </span>
@@ -190,9 +189,7 @@ export function EngagementDashboard() {
             <div className="space-y-2">
               {inactiveUsers.slice(0, 20).map(p => (
                 <div key={p.id} className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-tq-surface-2 flex items-center justify-center text-xs font-bold text-tq-text-muted">
-                    {p.display_name.charAt(0).toUpperCase()}
-                  </div>
+                  <Avatar profile={p} size="sm" />
                   <span className="flex-1 text-sm text-tq-text truncate">
                     {p.display_name}
                   </span>
