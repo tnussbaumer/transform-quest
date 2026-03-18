@@ -8,6 +8,9 @@
 -- re-completion. Now it updates the answers without re-awarding XP/streak.
 -- This ensures wall posts show the latest answers, not stale ones.
 
+-- Drop first to allow return type change if needed
+DROP FUNCTION IF EXISTS public.complete_reading(UUID, TEXT, TEXT, TEXT, INTEGER);
+
 CREATE OR REPLACE FUNCTION public.complete_reading(
   p_quest_day_id  UUID,
   p_answer_1      TEXT,
