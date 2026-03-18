@@ -1,5 +1,6 @@
 import { Flame, Check } from 'lucide-react'
 import { isCompletedToday } from '../../lib/streakUtils'
+import { Avatar } from '../profile/Avatar'
 import type { FriendWithProfile } from '../../types/database'
 
 interface FriendCardProps {
@@ -9,29 +10,14 @@ interface FriendCardProps {
   nudging?: boolean
 }
 
-function getInitials(name: string): string {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-}
-
 export function FriendCard({ friendship, hasNudgedToday, onNudge, nudging = false }: FriendCardProps) {
   const { friend, mutual_streak } = friendship
   const completedToday = isCompletedToday(friend.last_completed_at)
 
   return (
     <div className="flex items-center gap-3 py-3 px-1">
-      {/* Avatar */}
-      <div
-        className="w-10 h-10 rounded-full bg-tq-purple flex-shrink-0 flex items-center justify-center border border-tq-border"
-        aria-hidden="true"
-      >
-        {friend.avatar_url ? (
-          <img src={friend.avatar_url} alt={friend.display_name} className="w-full h-full rounded-full object-cover" />
-        ) : (
-          <span className="text-sm font-extrabold text-white">{getInitials(friend.display_name)}</span>
-        )}
-      </div>
+      <Avatar profile={friend} size="sm" />
 
-      {/* Name + streak info */}
       <div className="flex-1 min-w-0">
         <p className="font-bold text-tq-text text-sm truncate">{friend.display_name}</p>
         <div className="flex items-center gap-2 mt-0.5">
@@ -53,7 +39,6 @@ export function FriendCard({ friendship, hasNudgedToday, onNudge, nudging = fals
         </div>
       </div>
 
-      {/* Nudge button — only if friend hasn't completed today */}
       {!completedToday && (
         <button
           onClick={onNudge}

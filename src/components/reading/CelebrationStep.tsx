@@ -87,7 +87,7 @@ export function CelebrationStep({
         {isMilestone && (
           <div className="space-y-1">
             <p className="text-tq-purple text-lg font-extrabold">🎉 Quest Milestone!</p>
-            <p className="text-tq-gold text-sm font-bold">+50 XP Bonus!</p>
+            <p className="text-tq-gold text-sm font-bold">+100 XP Bonus!</p>
           </div>
         )}
 

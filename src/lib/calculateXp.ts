@@ -1,11 +1,11 @@
 /**
  * Calculate XP earned for completing a reading.
- * - Base: +20 XP
+ * - Base: +25 XP
  * - Early bird (before noon local time): +5 XP
  * - Weekend (Sat/Sun): +10 XP
  */
 export function calculateXp(completedAt: Date = new Date()): number {
-  let xp = 20
+  let xp = 25
 
   if (completedAt.getHours() < 12) {
     xp += 5 // early bird bonus

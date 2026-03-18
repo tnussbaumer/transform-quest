@@ -2,7 +2,7 @@
 
 > **This is the living reference document for the project.** Update it whenever the app's state meaningfully changes. Use it to orient any new Claude session, onboard collaborators, or remind yourself where things stand.
 
-*Last updated: March 17, 2026 — Phase 3 complete, build passing (500KB JS, 26KB CSS). Deployed on Vercel.*
+*Last updated: March 17, 2026 — Phase 3 complete + polish pass. Build passing (~530KB JS, 26KB CSS). Deployed on Vercel.*
 
 ---
 
@@ -62,19 +62,21 @@ A gamified daily Bible reading PWA for Transform Church youth (ages 11–18) in 
 - [x] First-time user auto-redirect to onboarding (`onboarding_completed` flag)
 
 ### ✅ Phase 3 — Admin, Quest Engine & Streak Freeze (COMPLETE)
-`npm run build` → 500KB JS, 26KB CSS, PWA service worker.
+`npm run build` → ~530KB JS, 26KB CSS, PWA service worker.
 
 - [x] Admin dashboard at `/admin` (leader/admin role required)
+- [x] Admin access via purple shield icon on Home page (visible to leader/admin only)
 - [x] Quest Builder: create/edit quests + daily readings with CRUD
 - [x] Engagement Dashboard: stat cards, streak leaderboard, inactive users, Nudge All button
-- [x] Announcements Manager: CRUD for announcements with active/inactive toggle + expiry
+- [x] Announcements Manager: full CRUD with active/inactive toggle, edit, delete with confirmation, expiry dates
 - [x] Announcement banners on Home screen (dismissible per-session)
-- [x] Multi-quest support: `useQuestHistory` hook, active + completed quests on Quests page
-- [x] Journey Map: S-curve day visualization with completed/today/future states
+- [x] Multi-quest support: `useQuestHistory` hook with joined query (quest_days + embedded completions)
+- [x] Journey Map: SVG winding S-curve path with glowing nodes, sparkle decorations, gradient trail, milestone markers
 - [x] Streak freeze mechanic: auto-earned every 7 days, `use_streak_freeze` RPC, Home modal
 - [x] Discipline/event quest types: alternate questions in `QuestionStep`, alternate headers in `PassageStep`
 - [x] Updated `complete_reading` RPC: milestone +50 XP, quest completion +200 XP, auto freeze award
 - [x] Leader read-access RLS policies for engagement dashboard
+- [x] All passage references visible on journey map for every day (not just milestones)
 
 **What is NOT built (Phase 4+):**
 - [ ] Push notification delivery (data model ready, delivery deferred)
@@ -160,7 +162,7 @@ transform-quest/
 │   │   ├── useFriends.ts            ← { friends, pendingIncoming, addFriend, acceptFriend, ... }
 │   │   ├── useNudge.ts              ← { todaysNudges, hasNudgedToday, nudgeFriend }
 │   │   ├── useBadges.ts             ← { allBadges, earnedBadges, hasBadge }
-│   │   ├── useQuestHistory.ts       ← { activeQuests, completedQuests, loading }
+│   │   ├── useQuestHistory.ts       ← { activeQuests, completedQuests, completedDayIds, loading, refetch }
 │   │   ├── useAdminStats.ts         ← { totalUsers, activeToday, avgStreak, profiles }
 │   │   └── useStreakFreeze.ts        ← { needsFreeze, freezesAvailable, useFreeze, dismiss }
 │   │
@@ -409,7 +411,7 @@ RLS: own-row SELECT; INSERT only via `use_streak_freeze` SECURITY DEFINER.
 |------|-----------|------|-------|
 | `/auth` | AuthPage | Public | Magic link + Google OAuth |
 | `/onboarding` | OnboardingPage | Protected | Set display name (first sign-in) |
-| `/` | HomePage | Protected | Daily reading hub + announcements + freeze modal |
+| `/` | HomePage | Protected | Daily reading hub + announcements + freeze modal + admin shield button |
 | `/quests` | QuestsPage | Protected | Active quests + journey map + completed quests |
 | `/friends` | FriendsPage | Protected | Invite code, requests, friend list + nudge |
 | `/profile` | ProfilePage | Protected | Stats, calendar, badges, freeze count |
@@ -478,20 +480,29 @@ Any Supabase query that may return 0 rows must use `.maybeSingle()`, not `.singl
 ### Profiles RLS
 All authenticated users can read any profile row (`profiles_select_authenticated` policy). This is required for invite code lookup and friend streak display.
 
-### AdminRoute
-Waits for both `user` and `profile` to be loaded before checking `profile.role`. Without the null-profile guard, a race condition between auth loading and profile fetching caused premature redirect to `/`.
+### Admin access
+Leaders/admins see a purple shield icon in the Home page header (next to streak counter) that navigates to `/admin`. `AdminRoute` waits for both `user` and `profile` to be loaded before checking `profile.role`. Without the null-profile guard, a race condition between auth loading and profile fetching caused premature redirect to `/`.
 
 ### Seed data — passage text
 All 30 days of "Journey Through Matthew" have passage summaries filled in.
 
 ### Reading flow — "already completed" guard
-The `complete_reading` RPC throws if the user already completed today. `ReadingFlowPage` catches this and still shows the celebration screen.
+The `complete_reading` RPC throws if the user already completed today. `ReadingFlowPage` catches this (with `console.error` logging) and still shows the celebration screen.
 
 ### Quest day lookup
 `useQuest.ts` determines today's day number by computing the diff in calendar days between `quest.start_date` and today, clamped to 1–totalDays.
 
+### useQuestHistory — joined query
+`useQuestHistory` fetches quest_days with an embedded Supabase join: `.select('*, completions(id)')`. RLS on completions ensures only the current user's completions are returned inline. A quest_day is marked completed if `d.completions.length > 0`. This eliminates the need for a separate completions query and prevents ID mismatch issues. The hook also supports `refetch()` and `QuestsPage` triggers refetch via `useLocation().key` on navigation.
+
+### Journey Map — SVG winding path
+`JourneyMap.tsx` renders an SVG-based winding S-curve path connecting all quest day nodes. Nodes follow a horizontal pattern (50% → 78% → 50% → 22%, repeating) with 100px vertical spacing. The path uses cubic bezier curves and has a gradient (teal → gold → gray) based on completion progress. Decorative sparkles and glow filters add visual depth. Milestone nodes get a purple glow; today's node gets a gold/teal glow.
+
 ### Vercel deployment
 `vercel.json` has an SPA rewrite rule (`/(.*) → /index.html`) so client-side routes like `/admin` are served correctly. Without this, direct navigation to non-root paths returns 404.
+
+### PWA service worker caching
+`vite-plugin-pwa` with `registerType: 'autoUpdate'` precaches all JS/CSS/HTML. After deploying new code, users may see the old version until the service worker updates (typically on next page load). For immediate updates: hard refresh, clear site data, or use incognito. `runtimeCaching` is empty — API calls to Supabase are NOT cached by the service worker.
 
 ---
 

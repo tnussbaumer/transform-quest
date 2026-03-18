@@ -1,14 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { isCompletedToday } from '../../lib/streakUtils'
+import { Avatar } from '../profile/Avatar'
 import type { FriendWithProfile } from '../../types/database'
 
 interface FriendActivitySnippetProps {
   friends: FriendWithProfile[]
-}
-
-function getInitials(name: string): string {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
 export function FriendActivitySnippet({ friends }: FriendActivitySnippetProps) {
@@ -43,22 +40,14 @@ export function FriendActivitySnippet({ friends }: FriendActivitySnippetProps) {
       aria-label={`${completedCount} friends completed today`}
     >
       <div className="flex items-center gap-3">
-        {/* Stacked mini avatars */}
         <div className="flex -space-x-2 flex-shrink-0">
           {displayFriends.map(f => (
-            <div
+            <Avatar
               key={f.friend.id}
-              className="w-8 h-8 rounded-full bg-tq-purple border-2 border-tq-surface flex items-center justify-center"
-              aria-hidden="true"
-            >
-              {f.friend.avatar_url ? (
-                <img src={f.friend.avatar_url} alt={f.friend.display_name} className="w-full h-full rounded-full object-cover" />
-              ) : (
-                <span className="text-xs font-extrabold text-white leading-none">
-                  {getInitials(f.friend.display_name)}
-                </span>
-              )}
-            </div>
+              profile={f.friend}
+              size="sm"
+              className="border-2 !border-tq-surface"
+            />
           ))}
         </div>
 

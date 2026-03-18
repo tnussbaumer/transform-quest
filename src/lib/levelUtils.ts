@@ -1,14 +1,14 @@
 /**
  * Returns the level title for a given total XP amount.
- * Matches the blueprint §4 level thresholds.
+ * Clay's custom level titles with thresholds for base 25 XP/day.
  */
 export function getLevelTitle(totalXp: number): string {
-  if (totalXp >= 25000) return 'Mighty Oak'
-  if (totalXp >= 10000) return 'Flourishing'
-  if (totalXp >= 5000)  return 'Branching'
-  if (totalXp >= 2000)  return 'Rooted'
-  if (totalXp >= 500)   return 'Sprout'
-  return 'Seedling'
+  if (totalXp >= 25000) return 'Scripture Master'
+  if (totalXp >= 10000) return 'Word Warrior'
+  if (totalXp >= 5000)  return 'Kingdom Builder'
+  if (totalXp >= 2000)  return 'Disciple'
+  if (totalXp >= 500)   return 'Explorer'
+  return 'Seeker'
 }
 
 /**
