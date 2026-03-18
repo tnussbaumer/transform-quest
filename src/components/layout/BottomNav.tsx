@@ -1,11 +1,11 @@
 import { NavLink } from 'react-router-dom'
-import { BookOpen, Compass, Users, User } from 'lucide-react'
+import { BookOpen, Compass, MessageCircle, User } from 'lucide-react'
 
 const tabs = [
-  { to: '/',        icon: BookOpen, label: 'Home'    },
-  { to: '/quests',  icon: Compass,  label: 'Quests'  },
-  { to: '/friends', icon: Users,    label: 'Friends' },
-  { to: '/profile', icon: User,     label: 'Profile' },
+  { to: '/',          icon: BookOpen,       label: 'Home'      },
+  { to: '/quests',    icon: Compass,        label: 'Quests'    },
+  { to: '/community', icon: MessageCircle,  label: 'Community' },
+  { to: '/profile',   icon: User,           label: 'Profile'   },
 ]
 
 export function BottomNav() {

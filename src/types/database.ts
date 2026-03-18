@@ -139,6 +139,43 @@ export interface FriendWithProfile extends Friendship {
   friend: FriendProfile
 }
 
+export interface WallPost {
+  id: string
+  user_id: string
+  quest_day_id: string
+  post_type: 'reflection' | 'thought'
+  visibility: 'friends' | 'everyone'
+  share_answer_1: boolean
+  share_answer_2: boolean
+  share_answer_3: boolean
+  thought_text: string | null
+  created_at: string
+  // Joined fields from get_wall_feed RPC
+  author_name: string
+  author_avatar_type: string
+  author_avatar_preset: string
+  author_avatar_url: string | null
+  answer_1: string | null
+  answer_2: string | null
+  answer_3: string | null
+  reactions: Record<string, number>
+  my_reactions: string[]
+  is_mine: boolean
+}
+
+export interface WallReaction {
+  id: string
+  post_id: string
+  user_id: string
+  reaction_type: 'heart' | 'prayer' | 'fire' | 'me_too'
+  created_at: string
+}
+
+export interface CreateWallPostResult {
+  post_id: string
+  xp_earned: number
+}
+
 // Supabase Database type for typed client (v2 format)
 export interface Database {
   public: {
