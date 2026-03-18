@@ -35,6 +35,15 @@ function timeAgo(dateStr: string): string {
 export function WallPostCard({ post, onToggleReaction, onDelete, index }: WallPostCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [reactionBusy, setReactionBusy] = useState(false)
+
+  function handleReaction(postId: string, type: string) {
+    if (reactionBusy) return
+    setReactionBusy(true)
+    onToggleReaction(postId, type)
+    // Debounce: prevent rapid double-taps for 400ms
+    setTimeout(() => setReactionBusy(false), 400)
+  }
 
   const authorProfile = {
     display_name: post.author_name,
@@ -136,7 +145,7 @@ export function WallPostCard({ post, onToggleReaction, onDelete, index }: WallPo
             return (
               <button
                 key={r.type}
-                onClick={() => onToggleReaction(post.id, r.type)}
+                onClick={() => handleReaction(post.id, r.type)}
                 className={[
                   'flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold',
                   'transition-all duration-200 active:scale-95',

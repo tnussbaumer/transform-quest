@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { sendNudgePush } from '../lib/sendNudgePush'
 import type { Nudge } from '../types/database'
 
 interface NudgeState {
   todaysNudges: Nudge[]
   loading: boolean
   hasNudgedToday: (friendId: string) => boolean
-  nudgeFriend: (toUserId: string, questDayId: string) => Promise<void>
+  nudgeFriend: (toUserId: string, questDayId: string, fromDisplayName?: string) => Promise<void>
 }
 
 export function useNudge(): NudgeState {
@@ -42,7 +43,7 @@ export function useNudge(): NudgeState {
     return todaysNudges.some(n => n.to_user === friendId)
   }
 
-  async function nudgeFriend(toUserId: string, questDayId: string) {
+  async function nudgeFriend(toUserId: string, questDayId: string, fromDisplayName?: string) {
     const { data } = await supabase.rpc('send_nudge', {
       p_to_user_id: toUserId,
       p_quest_day_id: questDayId,
@@ -52,6 +53,10 @@ export function useNudge(): NudgeState {
     await fetchTodaysNudges()
     if (result && !result.success && result.reason !== 'already_nudged_today') {
       throw new Error(result.reason ?? 'Could not send nudge')
+    }
+    // Fire-and-forget push notification to the nudged user
+    if (result?.success && fromDisplayName) {
+      sendNudgePush(toUserId, fromDisplayName)
     }
   }
 

@@ -78,9 +78,10 @@ export function QuestionStep({
         <Button
           fullWidth
           onClick={onNext}
-          disabled={!value.trim() || submitting}
+          disabled={!value.trim()}
+          loading={submitting}
         >
-          {submitting ? 'Saving...' : isLast ? 'Finish' : 'Next'}
+          {isLast ? 'Finish' : 'Next'}
         </Button>
       </div>
     </div>

@@ -228,3 +228,5 @@ export function ReadingFlowPage() {
     </div>
   )
 }
+
+export default ReadingFlowPage
