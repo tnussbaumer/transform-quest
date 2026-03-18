@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import type { Quest, QuestDay, Completion } from '../types/database'
+import type { Quest, QuestDay } from '../types/database'
 
 interface QuestWithProgress extends Quest {
   totalDays: number
@@ -15,6 +15,11 @@ interface QuestHistoryState {
   completedDayIds: Set<string>
   loading: boolean
   refetch: () => Promise<void>
+}
+
+// Quest day row with embedded completions from Supabase join
+interface QuestDayWithCompletions extends QuestDay {
+  completions: { id: string }[]
 }
 
 export function useQuestHistory(): QuestHistoryState {
@@ -37,23 +42,22 @@ export function useQuestHistory(): QuestHistoryState {
       if (questsErr) console.error('useQuestHistory: quests query failed', questsErr)
       const quests = (questsData ?? []) as Quest[]
 
-      // Fetch all quest_days
+      // Fetch all quest_days WITH their completions in a single joined query.
+      // RLS on completions ensures only the current user's completions are returned.
+      // Each quest_day gets a `completions` array — non-empty means the user completed it.
       const { data: daysData, error: daysErr } = await supabase
         .from('quest_days')
-        .select('*')
+        .select('*, completions(id)')
         .order('day_number', { ascending: true })
       if (daysErr) console.error('useQuestHistory: quest_days query failed', daysErr)
-      const allDays = (daysData ?? []) as QuestDay[]
+      const allDays = (daysData ?? []) as QuestDayWithCompletions[]
 
-      // Fetch user's completions
-      const { data: compData, error: compErr } = await supabase
-        .from('completions')
-        .select('*')
-        .eq('user_id', user.id)
-      if (compErr) console.error('useQuestHistory: completions query failed', compErr)
-      const completions = (compData ?? []) as Completion[]
-
-      const dayIds = new Set(completions.map(c => c.quest_day_id))
+      // Build completedDayIds from quest_days that have at least one completion
+      const dayIds = new Set(
+        allDays
+          .filter(d => d.completions && d.completions.length > 0)
+          .map(d => d.id)
+      )
       setCompletedDayIds(dayIds)
 
       const active: QuestWithProgress[] = []
