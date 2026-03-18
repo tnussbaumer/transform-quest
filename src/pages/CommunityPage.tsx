@@ -44,7 +44,8 @@ export function CommunityPage() {
   }, [questDay?.id, profile?.id])
 
   async function handleOpenCompose() {
-    if (isCompletedToday && !todaysAnswers) {
+    if (isCompletedToday) {
+      // Always fetch fresh answers (they may have changed since last fetch)
       await fetchAnswers()
     }
     setComposeOpen(true)
@@ -72,7 +73,8 @@ export function CommunityPage() {
 
   if (!profile) return null
 
-  const loading = questLoading || completionLoading
+  // Only wait for completion check if we actually have a quest day to check
+  const loading = questLoading || (!!questDay?.id && completionLoading)
 
   return (
     <div className="px-4 py-6 space-y-4">
