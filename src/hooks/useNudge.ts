@@ -48,10 +48,11 @@ export function useNudge(): NudgeState {
       p_quest_day_id: questDayId,
     })
     const result = data as { success: boolean; reason?: string } | null
-    if (result && !result.success) {
+    // Always refetch — even if already_nudged_today, we want the UI to reflect it
+    await fetchTodaysNudges()
+    if (result && !result.success && result.reason !== 'already_nudged_today') {
       throw new Error(result.reason ?? 'Could not send nudge')
     }
-    await fetchTodaysNudges()
   }
 
   return { todaysNudges, loading, hasNudgedToday, nudgeFriend }
