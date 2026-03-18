@@ -3,29 +3,60 @@ import { X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Announcement } from '../../types/database'
 
-const URL_REGEX = /(https?:\/\/[^\s]+)/g
+// Matches markdown links [text](url) and bare URLs
+const LINK_REGEX = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s]+)/g
 
 function LinkifiedText({ text }: { text: string }) {
-  const parts = text.split(URL_REGEX)
-  return (
-    <>
-      {parts.map((part, i) =>
-        URL_REGEX.test(part) ? (
-          <a
-            key={i}
-            href={part}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-tq-teal underline hover:text-tq-teal-light transition-colors break-all"
-          >
-            {part}
-          </a>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      )}
-    </>
-  )
+  const parts: React.ReactNode[] = []
+  let lastIndex = 0
+
+  // Reset regex state
+  LINK_REGEX.lastIndex = 0
+
+  let match
+  while ((match = LINK_REGEX.exec(text)) !== null) {
+    // Add text before this match
+    if (match.index > lastIndex) {
+      parts.push(<span key={`t${lastIndex}`}>{text.slice(lastIndex, match.index)}</span>)
+    }
+
+    if (match[1] && match[2]) {
+      // Markdown link: [text](url)
+      parts.push(
+        <a
+          key={`l${match.index}`}
+          href={match[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-tq-teal underline hover:text-tq-teal-light transition-colors"
+        >
+          {match[1]}
+        </a>
+      )
+    } else {
+      // Bare URL
+      parts.push(
+        <a
+          key={`l${match.index}`}
+          href={match[3]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-tq-teal underline hover:text-tq-teal-light transition-colors break-all"
+        >
+          {match[3]}
+        </a>
+      )
+    }
+
+    lastIndex = match.index + match[0].length
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(<span key={`t${lastIndex}`}>{text.slice(lastIndex)}</span>)
+  }
+
+  return <>{parts}</>
 }
 
 export function AnnouncementBanner() {
@@ -50,6 +81,9 @@ export function AnnouncementBanner() {
 
   return (
     <div className="space-y-3">
+      <h2 className="text-xs font-extrabold uppercase tracking-widest text-tq-text-muted">
+        Announcements
+      </h2>
       {visible.map(a => (
         <div
           key={a.id}

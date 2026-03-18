@@ -200,12 +200,17 @@ export function AnnouncementsManager() {
               placeholder="Announcement title"
             />
 
-            <Textarea
-              label="Body (optional)"
-              value={form.body}
-              onChange={e => setForm(f => ({ ...f, body: e.target.value }))}
-              placeholder="Additional details..."
-            />
+            <div>
+              <Textarea
+                label="Body (optional)"
+                value={form.body}
+                onChange={e => setForm(f => ({ ...f, body: e.target.value }))}
+                placeholder="Additional details..."
+              />
+              <p className="text-xs text-tq-text-muted mt-1.5">
+                Tip: Use [link text](https://url) to make clickable links
+              </p>
+            </div>
 
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-semibold text-tq-text-sec">
