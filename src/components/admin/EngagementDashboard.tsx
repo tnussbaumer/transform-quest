@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Users, Flame, TrendingUp, BarChart3, Send } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Users, Flame, TrendingUp, BarChart3, Send, Trash2, MessageCircle, Lock, Globe } from 'lucide-react'
 import { useAdminStats } from '../../hooks/useAdminStats'
 import { isCompletedToday } from '../../lib/streakUtils'
 import { supabase } from '../../lib/supabase'
@@ -7,10 +7,71 @@ import { Avatar } from '../profile/Avatar'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 
+interface AdminPost {
+  id: string
+  user_id: string
+  post_type: string
+  visibility: string
+  thought_text: string | null
+  share_answer_1: boolean
+  share_answer_2: boolean
+  share_answer_3: boolean
+  created_at: string
+  author_name?: string
+}
+
 export function EngagementDashboard() {
   const { totalUsers, activeToday, avgStreak, completionRate, profiles, loading } = useAdminStats()
   const [nudging, setNudging] = useState(false)
   const [nudgeResult, setNudgeResult] = useState<string | null>(null)
+  const [recentPosts, setRecentPosts] = useState<AdminPost[]>([])
+  const [postsLoading, setPostsLoading] = useState(true)
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchRecentPosts()
+  }, [])
+
+  async function fetchRecentPosts() {
+    setPostsLoading(true)
+    try {
+      const { data } = await supabase
+        .from('wall_posts')
+        .select('id, user_id, post_type, visibility, thought_text, share_answer_1, share_answer_2, share_answer_3, created_at')
+        .order('created_at', { ascending: false })
+        .limit(20)
+      const posts = (data as AdminPost[] | null) ?? []
+      // Fetch author names
+      const userIds = [...new Set(posts.map(p => p.user_id))]
+      if (userIds.length > 0) {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, display_name')
+          .in('id', userIds)
+        const nameMap = new Map((profs as { id: string; display_name: string }[] ?? []).map(p => [p.id, p.display_name]))
+        for (const post of posts) {
+          post.author_name = nameMap.get(post.user_id) ?? 'Unknown'
+        }
+      }
+      setRecentPosts(posts)
+    } catch (err) {
+      console.error('Failed to fetch recent posts:', err)
+    } finally {
+      setPostsLoading(false)
+    }
+  }
+
+  async function handleDeletePost(postId: string) {
+    setDeletingPostId(postId)
+    try {
+      await supabase.from('wall_posts').delete().eq('id', postId)
+      setRecentPosts(prev => prev.filter(p => p.id !== postId))
+    } catch (err) {
+      console.error('Failed to delete post:', err)
+    } finally {
+      setDeletingPostId(null)
+    }
+  }
 
   const streakLeaders = profiles
     .filter(p => p.current_streak > 0)
@@ -208,6 +269,62 @@ export function EngagementDashboard() {
             <p className="text-tq-success text-sm text-center py-4 font-semibold">
               Everyone has read today!
             </p>
+          )}
+        </Card>
+      </section>
+
+      {/* Recent Wall Posts (moderation) */}
+      <section>
+        <h2 className="text-xs font-extrabold uppercase tracking-widest text-tq-text-sec mb-3">
+          <span className="flex items-center gap-1.5">
+            <MessageCircle size={14} />
+            Recent Wall Posts
+          </span>
+        </h2>
+        <Card>
+          {postsLoading ? (
+            <p className="text-tq-text-muted text-sm text-center py-4">Loading posts...</p>
+          ) : recentPosts.length === 0 ? (
+            <p className="text-tq-text-muted text-sm text-center py-4">No wall posts yet</p>
+          ) : (
+            <div className="divide-y divide-tq-border/40">
+              {recentPosts.map(post => (
+                <div key={post.id} className="py-3 flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-bold text-tq-text truncate">{post.author_name}</span>
+                      <span className="text-xs text-tq-text-muted capitalize">{post.post_type}</span>
+                      {post.visibility === 'friends' ? (
+                        <Lock size={10} className="text-tq-text-muted" />
+                      ) : (
+                        <Globe size={10} className="text-tq-text-muted" />
+                      )}
+                      <span className="text-xs text-tq-text-muted">
+                        {new Date(post.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-xs text-tq-text-sec truncate">
+                      {post.post_type === 'thought'
+                        ? post.thought_text ?? ''
+                        : [
+                            post.share_answer_1 && 'A1',
+                            post.share_answer_2 && 'A2',
+                            post.share_answer_3 && 'A3',
+                          ].filter(Boolean).join(', ') + ' shared'
+                      }
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDeletePost(post.id)}
+                    disabled={deletingPostId === post.id}
+                    className="p-2 rounded-lg text-tq-text-muted hover:text-tq-error hover:bg-tq-error/10 transition-colors flex-shrink-0"
+                    aria-label="Delete post"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
         </Card>
       </section>

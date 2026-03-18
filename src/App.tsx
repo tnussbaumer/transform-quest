@@ -8,7 +8,7 @@ import { OnboardingPage } from './pages/OnboardingPage'
 import { HomePage } from './pages/HomePage'
 import { ReadingFlowPage } from './pages/ReadingFlowPage'
 import { QuestsPage } from './pages/QuestsPage'
-import { FriendsPage } from './pages/FriendsPage'
+import { CommunityPage } from './pages/CommunityPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { AdminPage } from './pages/AdminPage'
 
@@ -66,7 +66,8 @@ export default function App() {
           >
             <Route index element={<HomePage />} />
             <Route path="quests" element={<QuestsPage />} />
-            <Route path="friends" element={<FriendsPage />} />
+            <Route path="community" element={<CommunityPage />} />
+            <Route path="friends" element={<Navigate to="/community" replace />} />
             <Route path="profile" element={<ProfilePage />} />
           </Route>
 

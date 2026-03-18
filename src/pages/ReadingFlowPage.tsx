@@ -10,6 +10,7 @@ import { PassageStep } from '../components/reading/PassageStep'
 import { QuestionStep } from '../components/reading/QuestionStep'
 import { CelebrationStep } from '../components/reading/CelebrationStep'
 import { FriendStreaksStep } from '../components/reading/FriendStreaksStep'
+import { ShareStep } from '../components/reading/ShareStep'
 import { ShareButton } from '../components/reading/ShareButton'
 import { Button } from '../components/ui/Button'
 import type { QuestDay, CompleteReadingResult, NewBadge } from '../types/database'
@@ -19,8 +20,9 @@ const STEP_Q1         = 2
 const STEP_Q2         = 3
 const STEP_Q3         = 4
 const STEP_CELEBRATE  = 5
-const STEP_FRIENDS    = 6
-const STEP_DONE       = 7
+const STEP_SHARE      = 6
+const STEP_FRIENDS    = 7
+const STEP_DONE       = 8
 
 export function ReadingFlowPage() {
   const { questDayId } = useParams<{ questDayId: string }>()
@@ -30,7 +32,7 @@ export function ReadingFlowPage() {
   const { friends } = useFriends()
 
   const hasFriends = friends.length > 0
-  const TOTAL_STEPS = hasFriends ? 7 : 5
+  const TOTAL_STEPS = hasFriends ? 8 : 6
 
   const [step, setStep] = useState(STEP_PASSAGE)
   const [questDay, setQuestDay] = useState<QuestDay | null>(null)
@@ -102,6 +104,10 @@ export function ReadingFlowPage() {
   }
 
   function handleCelebrationContinue() {
+    setStep(STEP_SHARE)
+  }
+
+  function handleShareContinue() {
     if (hasFriends) {
       setStep(STEP_FRIENDS)
     } else {
@@ -172,6 +178,14 @@ export function ReadingFlowPage() {
           answers={answers}
           newBadges={newBadges}
           onContinue={handleCelebrationContinue}
+        />
+      )}
+
+      {step === STEP_SHARE && (
+        <ShareStep
+          questDayId={questDayId}
+          answers={answers}
+          onContinue={handleShareContinue}
         />
       )}
 
