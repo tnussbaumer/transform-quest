@@ -42,7 +42,7 @@ export function Avatar({ profile, size = 'md', className = '' }: AvatarProps) {
         <img
           src={profile.avatar_url}
           alt={profile.display_name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover object-top"
         />
       </div>
     )
