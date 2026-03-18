@@ -2,7 +2,7 @@
 
 > **This is the living reference document for the project.** Update it whenever the app's state meaningfully changes. Use it to orient any new Claude session, onboard collaborators, or remind yourself where things stand.
 
-*Last updated: March 17, 2026 — Phase 3 complete + polish pass. Build passing (~530KB JS, 26KB CSS). Deployed on Vercel.*
+*Last updated: March 17, 2026 — Phase 3B complete. Build passing (~516KB JS, 32KB CSS). Deployed on Vercel.*
 
 ---
 
@@ -10,7 +10,7 @@
 
 A gamified daily Bible reading PWA for Transform Church youth (ages 11–18) in Andover, MN. Youth pastor **Clay Knight** uses it to build a daily Bible reading habit tied to his teaching calendar.
 
-**Core daily loop:** Open app → Read today's passage → Answer 3 reflection questions → Earn streak + XP → See progress.
+**Core daily loop:** Open app → Open your Bible to today's passage → Answer 3 reflection questions → Earn streak + XP → See progress.
 
 **Inspiration:** Duolingo (dark UI, streaks, XP), modern fitness apps (habit formation).
 
@@ -62,8 +62,6 @@ A gamified daily Bible reading PWA for Transform Church youth (ages 11–18) in 
 - [x] First-time user auto-redirect to onboarding (`onboarding_completed` flag)
 
 ### ✅ Phase 3 — Admin, Quest Engine & Streak Freeze (COMPLETE)
-`npm run build` → ~530KB JS, 26KB CSS, PWA service worker.
-
 - [x] Admin dashboard at `/admin` (leader/admin role required)
 - [x] Admin access via purple shield icon on Home page (visible to leader/admin only)
 - [x] Quest Builder: create/edit quests + daily readings with CRUD
@@ -77,6 +75,26 @@ A gamified daily Bible reading PWA for Transform Church youth (ages 11–18) in 
 - [x] Updated `complete_reading` RPC: milestone +50 XP, quest completion +200 XP, auto freeze award
 - [x] Leader read-access RLS policies for engagement dashboard
 - [x] All passage references visible on journey map for every day (not just milestones)
+
+### ✅ Phase 3B — Social Discovery, Avatars, Content & XP Updates (COMPLETE)
+`npm run build` → ~516KB JS, 32KB CSS, PWA service worker.
+
+- [x] **Avatar system**: 8 preset emoji avatars (lion, eagle, flame, shield, mountain, star, compass, crown) on gradient backgrounds + custom photo upload (client-side resize to 256x256 WebP, Supabase Storage)
+- [x] **Avatar component** (`Avatar.tsx`): shared sm/md/lg sizes, used across all avatar display points (profile header, friend cards, friend activity snippet, friend streaks step, engagement dashboard leaderboard, pending requests)
+- [x] **AvatarPicker component**: preset grid + photo upload, used in onboarding and profile editing
+- [x] **Onboarding updated**: 2-step flow (name → avatar picker with skip option)
+- [x] **Profile page**: "Edit Avatar" button with inline AvatarPicker
+- [x] **Friend discovery**: replaced invite code entry with "Find Friends" discovery list showing all users, search filter, "Add" button → "Requested" state
+- [x] **PassageStep updated**: encourages physical Bibles instead of displaying passage text. Shows passage reference prominently + rotating encouraging messages + biblegateway.com link. "I've Read It" CTA button. Discipline/event quests still show passage_text.
+- [x] **XP values updated** (Clay's spec): base 25 (was 20), milestone +100 (was +50), quest completion +1000 (was +200)
+- [x] **Streak XP bonuses**: awarded alongside streak badges (3-day: +50, 7-day: +100, 14-day: +150, 21-day: +200, 30-day: +300, 45-day: +400, 60-day: +500, 75-day: +600, 90-day: +1000)
+- [x] **Level titles updated** (Clay's spec): Seeker → Explorer → Disciple → Kingdom Builder → Word Warrior → Scripture Master
+- [x] **Streak freeze rebranded**: "The Two-Day Rule" — "Mistakes happen, but don't let it happen twice in a row!"
+- [x] **Luke–Acts 90-Day Quest**: 79 reading days seeded across Luke and Acts, 17 section milestones + 1 quest completion badge
+- [x] **25 new badges**: 18 Luke–Acts section badges + 7 new streak milestones (3, 21, 45, 75 days + overlapping 14, 30, 60)
+- [x] **Celebration milestone text**: updated to "+100 XP Bonus!" (was +50)
+- [x] **`check_and_award_badges` RPC**: now returns VOID (was JSONB), awards streak XP bonuses alongside badges
+- [x] **Supabase Storage**: `avatars` bucket (public, 2MB limit, image/jpeg/png/webp) with per-user folder RLS policies
 
 **What is NOT built (Phase 4+):**
 - [ ] Push notification delivery (data model ready, delivery deferred)
@@ -98,11 +116,14 @@ A gamified daily Bible reading PWA for Transform Church youth (ages 11–18) in 
    - `supabase/migrations/004_onboarding_flag.sql` — adds `onboarding_completed` to profiles
    - `supabase/migrations/005_profiles_public_read.sql` — adds `profiles_select_authenticated` RLS policy
    - `supabase/migrations/006_phase3_admin.sql` — announcements + streak_freezes_used tables, leader write/read policies, updated `complete_reading` + `use_streak_freeze` RPC
-   - `supabase/seed.sql` — "Journey Through Matthew" 30-day quest
-   - `supabase/seed_badges.sql` — 11 badge definitions
-3. Enable **Google OAuth**: Dashboard → Authentication → Providers → Google
-4. Set **Site URL** and **Redirect URLs** in Auth settings (include `http://localhost:5173` for local dev, and your Vercel URL for prod)
-5. Create `.env.local` in the project root (this file is gitignored):
+   - `supabase/migrations/007_phase3b_social_avatars.sql` — avatar columns, updated XP/level functions, new badges, updated `complete_reading` + `check_and_award_badges` RPCs
+   - `supabase/seed.sql` — "Journey Through Matthew" quest + 30 days
+   - `supabase/seed_badges.sql` — 11 original badge definitions
+   - `supabase/seed_luke_acts.sql` — "Luke–Acts: The Gospel Unleashed" quest + 79 days
+3. Create **`avatars` storage bucket**: Dashboard → Storage → New Bucket → name "avatars", public: YES, 2MB limit, MIME types: image/jpeg, image/png, image/webp. Add 4 RLS policies (public SELECT, authenticated INSERT/UPDATE/DELETE with `(storage.foldername(name))[1] = auth.uid()::text` or `SPLIT_PART(name, '/', 1) = auth.uid()::text`)
+4. Enable **Google OAuth**: Dashboard → Authentication → Providers → Google
+5. Set **Site URL** and **Redirect URLs** in Auth settings (include `http://localhost:5173` for local dev, and your Vercel URL for prod)
+6. Create `.env.local` in the project root (this file is gitignored):
 ```
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
@@ -127,6 +148,7 @@ transform-quest/
 │   ├── CLAUDE-CODE-PROMPT.md        ← Phase 1 build instructions
 │   ├── CLAUDE-CODE-PROMPT-PHASE2.md ← Phase 2 build instructions
 │   ├── CLAUDE-CODE-PROMPT-PHASE3.md ← Phase 3 build instructions
+│   ├── CLAUDE-CODE-PROMPT-PHASE3B.md ← Phase 3B build instructions
 │   └── SOURCE_OF_TRUTH.md          ← This file
 │
 ├── supabase/
@@ -136,9 +158,11 @@ transform-quest/
 │   │   ├── 003_phase2_social.sql    ← Social tables + RPCs (friends, nudges, badges)
 │   │   ├── 004_onboarding_flag.sql  ← onboarding_completed column
 │   │   ├── 005_profiles_public_read.sql ← Authenticated read-all profiles policy
-│   │   └── 006_phase3_admin.sql     ← Admin tables, leader policies, updated RPCs
+│   │   ├── 006_phase3_admin.sql     ← Admin tables, leader policies, updated RPCs
+│   │   └── 007_phase3b_social_avatars.sql ← Avatar columns, XP/level updates, new badges, updated RPCs
 │   ├── seed.sql                     ← "Journey Through Matthew" quest + 30 days
-│   └── seed_badges.sql              ← 11 badge definitions
+│   ├── seed_badges.sql              ← 11 original badge definitions
+│   └── seed_luke_acts.sql           ← "Luke–Acts: The Gospel Unleashed" quest + 79 days
 │
 ├── src/
 │   ├── App.tsx                      ← Router setup (all routes defined here)
@@ -146,11 +170,11 @@ transform-quest/
 │   ├── index.css                    ← Tailwind directives + CSS properties + animations
 │   │
 │   ├── types/
-│   │   └── database.ts              ← All TypeScript interfaces
+│   │   └── database.ts              ← All TypeScript interfaces (Profile includes avatar_type, avatar_preset)
 │   │
 │   ├── lib/
 │   │   ├── supabase.ts              ← createClient() — untyped, explicit casts at call sites
-│   │   ├── calculateXp.ts           ← calculateXp(date) → number
+│   │   ├── calculateXp.ts           ← calculateXp(date) → number (base 25 XP)
 │   │   ├── levelUtils.ts            ← getLevelTitle(xp), xpToNextLevel(xp), formatXp(xp)
 │   │   └── streakUtils.ts           ← isCompletedToday(), toLocalDateString(), getCurrentWeekDays()
 │   │
@@ -159,7 +183,7 @@ transform-quest/
 │   │   ├── useQuest.ts              ← { quest, questDay, dayNumber, totalDays, loading }
 │   │   ├── useCompletion.ts         ← { isCompletedToday, submitCompletion(), submitting }
 │   │   ├── useProfile.ts            ← { profile, completions[], loading, refetch() }
-│   │   ├── useFriends.ts            ← { friends, pendingIncoming, addFriend, acceptFriend, ... }
+│   │   ├── useFriends.ts            ← { friends, pendingIncoming, discoverableUsers, sendFriendRequest, ... }
 │   │   ├── useNudge.ts              ← { todaysNudges, hasNudgedToday, nudgeFriend }
 │   │   ├── useBadges.ts             ← { allBadges, earnedBadges, hasBadge }
 │   │   ├── useQuestHistory.ts       ← { activeQuests, completedQuests, completedDayIds, loading, refetch }
@@ -168,12 +192,12 @@ transform-quest/
 │   │
 │   ├── pages/
 │   │   ├── AuthPage.tsx             ← /auth — magic link + Google OAuth
-│   │   ├── OnboardingPage.tsx       ← /onboarding — set display name
-│   │   ├── HomePage.tsx             ← / — reading card, streak, stats, announcements, freeze modal
+│   │   ├── OnboardingPage.tsx       ← /onboarding — 2-step: set display name → choose avatar
+│   │   ├── HomePage.tsx             ← / — reading card, streak, stats, announcements, "Two-Day Rule" freeze modal
 │   │   ├── ReadingFlowPage.tsx      ← /read/:questDayId — 5-7 step flow
 │   │   ├── QuestsPage.tsx           ← /quests — active quests + journey map + completed
-│   │   ├── FriendsPage.tsx          ← /friends — invite code, requests, friend list
-│   │   ├── ProfilePage.tsx          ← /profile — stats, calendar, badges, freeze count
+│   │   ├── FriendsPage.tsx          ← /friends — friend discovery list, requests, friend list + nudge
+│   │   ├── ProfilePage.tsx          ← /profile — stats, calendar, badges, avatar editing, freeze count
 │   │   └── AdminPage.tsx            ← /admin — quest builder, engagement, announcements
 │   │
 │   └── components/
@@ -185,8 +209,8 @@ transform-quest/
 │       │                            ProgressDots, FriendStreaksStep, ShareButton
 │       ├── quest/                   ActiveQuestCard, JourneyMap
 │       ├── profile/                 ProfileHeader, StatsGrid, StreakCalendar,
-│       │                            BadgesGrid, BadgeCircle
-│       ├── friends/                 FriendCard, FriendsList, AddFriendSection, PendingRequests
+│       │                            BadgesGrid, BadgeCircle, Avatar, AvatarPicker
+│       ├── friends/                 FriendCard, FriendsList, PendingRequests
 │       └── admin/                   QuestBuilder, EngagementDashboard, AnnouncementsManager
 │
 ├── vercel.json                      ← SPA rewrite rule for client-side routing
@@ -200,24 +224,26 @@ transform-quest/
 
 ## 6. DATABASE SCHEMA
 
-All tables live in `public` schema. Run migrations 001–006 in order.
+All tables live in `public` schema. Run migrations 001–007 in order.
 
 ### `profiles`
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | UUID PK | References `auth.users(id)` |
 | `display_name` | TEXT NOT NULL | Set during onboarding |
-| `avatar_url` | TEXT nullable | |
+| `avatar_url` | TEXT nullable | Public URL for custom uploaded photo |
+| `avatar_type` | TEXT | `'preset'` \| `'custom'`, default `'preset'` |
+| `avatar_preset` | TEXT | Preset key (e.g. `'lion'`, `'eagle'`), default `'default'` |
 | `role` | TEXT | `'youth'` \| `'leader'` \| `'admin'`, default `'youth'` |
 | `current_streak` | INT | Updated by `complete_reading()` |
 | `longest_streak` | INT | Auto-updated if current exceeds it |
 | `total_xp` | INT | Cumulative XP |
-| `level_title` | TEXT | Seedling → Sprout → Rooted → Branching → Flourishing → Mighty Oak |
+| `level_title` | TEXT | Seeker → Explorer → Disciple → Kingdom Builder → Word Warrior → Scripture Master |
 | `last_completed_at` | TIMESTAMPTZ | Used for streak logic |
 | `streak_freezes_available` | INT | Default 0, auto-awarded every 7-day streak |
 | `daily_reminder_time` | TIME | Default 19:00 |
 | `push_subscription` | JSONB nullable | For future push notifications |
-| `invite_code` | TEXT UNIQUE | 8-char uppercase, auto-generated on signup |
+| `invite_code` | TEXT UNIQUE | 8-char uppercase, auto-generated on signup (kept but UI removed) |
 | `onboarding_completed` | BOOLEAN | Default false |
 | `created_at` | TIMESTAMPTZ | Join date |
 
@@ -227,7 +253,7 @@ RLS: all authenticated users can SELECT any row. Own-row UPDATE/INSERT only.
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | UUID PK | |
-| `title` | TEXT NOT NULL | e.g. "Journey Through Matthew" |
+| `title` | TEXT NOT NULL | e.g. "Journey Through Matthew", "Luke–Acts: The Gospel Unleashed" |
 | `description` | TEXT nullable | |
 | `start_date` | DATE | |
 | `end_date` | DATE | |
@@ -246,10 +272,10 @@ RLS: all authenticated SELECT. Leaders/admins can INSERT + UPDATE.
 | `id` | UUID PK | Used in `/read/:questDayId` |
 | `quest_id` | UUID FK | → `quests.id` CASCADE |
 | `day_number` | INT | 1–N, UNIQUE per quest |
-| `passage_reference` | TEXT nullable | e.g. "Matthew 5:1-16" |
-| `passage_text` | TEXT nullable | Passage content or challenge details |
-| `is_milestone` | BOOLEAN | Default false. Days 7, 14, 21, 30 in seed |
-| `milestone_note` | TEXT nullable | Shown on milestone days |
+| `passage_reference` | TEXT nullable | e.g. "Luke 5:1–26" |
+| `passage_text` | TEXT nullable | Passage summary (used on share/celebration screen, NOT shown during reading) |
+| `is_milestone` | BOOLEAN | Default false. Section-end days in Luke–Acts quest |
+| `milestone_note` | TEXT nullable | Section badge name for milestone days |
 
 RLS: all authenticated SELECT. Leaders/admins can INSERT + UPDATE + DELETE.
 
@@ -294,11 +320,11 @@ RLS: sender + receiver + leaders can SELECT; sender can INSERT.
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | UUID PK | |
-| `name` | TEXT NOT NULL | e.g. "Week Warrior" |
+| `name` | TEXT NOT NULL | e.g. "Week Warrior", "The Investigation Begins" |
 | `description` | TEXT nullable | |
 | `icon` | TEXT nullable | Emoji |
 | `badge_type` | TEXT | `'streak'` \| `'quest'` \| `'monthly'` \| `'special'` |
-| `requirement_value` | INT nullable | e.g. 7 for "Week Warrior" |
+| `requirement_value` | INT nullable | e.g. 7 for "Week Warrior", NULL for quest badges |
 | `created_at` | TIMESTAMPTZ | |
 
 RLS: all authenticated SELECT.
@@ -342,11 +368,11 @@ RLS: own-row SELECT; INSERT only via `use_streak_freeze` SECURITY DEFINER.
 
 | Function | Security | Description |
 |----------|----------|-------------|
-| `xp_to_level(p_xp)` | — | IMMUTABLE. Maps XP → level title |
+| `xp_to_level(p_xp)` | — | IMMUTABLE. Maps XP → level title (Seeker/Explorer/Disciple/Kingdom Builder/Word Warrior/Scripture Master) |
 | `handle_new_user()` | DEFINER | Trigger on auth.users INSERT. Creates profile + invite_code |
 | `generate_invite_code()` | — | Returns random 8-char uppercase string |
-| `complete_reading(quest_day_id, answer_1-3, xp_earned)` | DEFINER | Atomic: insert completion + update streak/XP/level + milestone bonus (+50) + quest completion bonus (+200) + auto-award freeze every 7 days + award badges + update mutual streaks. Returns `{new_streak, new_xp, new_level, new_badges, xp_earned, milestone_bonus, quest_complete, freeze_earned}` |
-| `check_and_award_badges(user_id)` | DEFINER | Evaluates all badge conditions, returns JSONB array of newly earned |
+| `complete_reading(quest_day_id, answer_1-3, xp_earned)` | DEFINER | Atomic: insert completion + update streak/XP/level + milestone bonus (+100) + quest completion bonus (+1000) + auto-award freeze every 7 days + award badges + update mutual streaks. Returns JSONB `{new_streak, new_xp, new_level, new_badges, xp_earned, milestone_bonus, quest_complete, freeze_earned}` |
+| `check_and_award_badges(user_id)` | DEFINER | Evaluates all badge conditions, awards streak XP bonuses (3-day: +50 through 365-day: +3000). Returns VOID |
 | `send_nudge(to_user_id, quest_day_id)` | DEFINER | Inserts nudge (max 1/day per pair), triggers badge check |
 | `update_mutual_streaks(user_id)` | DEFINER | Increments or resets mutual_streak for all accepted friendships |
 | `use_streak_freeze()` | DEFINER | Uses one freeze if streak is about to break (2+ day gap). Returns `{freeze_used, remaining_freezes}` |
@@ -358,22 +384,37 @@ RLS: own-row SELECT; INSERT only via `use_streak_freeze` SECURITY DEFINER.
 ### XP per completion
 | Condition | XP |
 |-----------|-----|
-| Base (always) | +20 |
+| Base (always) | +25 |
 | Before noon local time ("Early Bird") | +5 |
 | Saturday or Sunday ("Weekend") | +10 |
-| Milestone day bonus | +50 |
-| Quest completion bonus | +200 |
-| **Max possible per day** | **35** (base) or **85** (milestone + quest completion) |
+| Milestone day bonus | +100 |
+| Quest completion bonus | +1000 |
+| **Max possible per day** | **40** (base) or **1,140** (milestone + quest completion) |
+
+### Streak XP bonuses (awarded with streak badges)
+| Streak | Bonus XP |
+|--------|----------|
+| 3 days | +50 |
+| 7 days | +100 |
+| 14 days | +150 |
+| 21 days | +200 |
+| 30 days | +300 |
+| 45 days | +400 |
+| 60 days | +500 |
+| 75 days | +600 |
+| 90 days | +1,000 |
+| 180 days | +1,500 |
+| 365 days | +3,000 |
 
 ### Level titles
 | XP Range | Title |
 |----------|-------|
-| 0 – 499 | Seedling |
-| 500 – 1,999 | Sprout |
-| 2,000 – 4,999 | Rooted |
-| 5,000 – 9,999 | Branching |
-| 10,000 – 24,999 | Flourishing |
-| 25,000+ | Mighty Oak |
+| 0 – 499 | Seeker |
+| 500 – 1,999 | Explorer |
+| 2,000 – 4,999 | Disciple |
+| 5,000 – 9,999 | Kingdom Builder |
+| 10,000 – 24,999 | Word Warrior |
+| 25,000+ | Scripture Master |
 
 ### Streak logic (server-side in `complete_reading()`)
 - `last_completed_at` was **yesterday** → `current_streak + 1`
@@ -382,13 +423,16 @@ RLS: own-row SELECT; INSERT only via `use_streak_freeze` SECURITY DEFINER.
 - Every **7 consecutive days** → auto-award 1 streak freeze
 - Dates compared in UTC in the RPC; client-side display uses local time
 
-### Streak freeze
+### Streak freeze — "The Two-Day Rule"
 - Auto-earned every 7-day streak milestone
 - Used when 2+ day gap detected (missed yesterday)
 - Sets `last_completed_at` to yesterday, preserving the streak
 - One freeze per day max
+- UI branding: "Mistakes happen, but don't let it happen twice in a row!"
 
-### Badges (11 seeded)
+### Badges (36 total: 11 original + 18 Luke–Acts section + 7 new streak)
+
+**Original badges (seeded in `seed_badges.sql`):**
 | Name | Type | Requirement |
 |------|------|-------------|
 | Week Warrior | streak | 7 days |
@@ -403,6 +447,20 @@ RLS: own-row SELECT; INSERT only via `use_streak_freeze` SECURITY DEFINER.
 | Encourager | special | 1 nudge sent |
 | Matthew Scholar | quest | Complete "Journey Through Matthew" |
 
+**New streak badges (seeded in migration 007):**
+| Name | Type | Requirement |
+|------|------|-------------|
+| Getting Started | streak | 3 days |
+| Locked In | streak | 14 days |
+| Habit Builder | streak | 21 days |
+| Polishing Your Sword | streak | 30 days |
+| Halfway Hero | streak | 45 days |
+| Deep Roots | streak | 60 days |
+| Final Stretch | streak | 75 days |
+
+**Luke–Acts section badges (seeded in migration 007):**
+The Investigation Begins, The Story Begins, Ready for the Mission, Following Jesus, On the Road with Jesus, The King Arrives, The Sacrifice, The Risen King, Power from the Spirit, Church Ignited, The Mission Expands, First Mission Journey, The Gospel Clarified, The Gospel Crosses Cultures, Kingdom Impact, Standing for Jesus, The Gospel to the World, The Gospel Unleashed (quest completion)
+
 ---
 
 ## 8. ROUTES
@@ -410,11 +468,11 @@ RLS: own-row SELECT; INSERT only via `use_streak_freeze` SECURITY DEFINER.
 | Path | Component | Auth | Notes |
 |------|-----------|------|-------|
 | `/auth` | AuthPage | Public | Magic link + Google OAuth |
-| `/onboarding` | OnboardingPage | Protected | Set display name (first sign-in) |
-| `/` | HomePage | Protected | Daily reading hub + announcements + freeze modal + admin shield button |
+| `/onboarding` | OnboardingPage | Protected | 2-step: set display name → choose avatar |
+| `/` | HomePage | Protected | Daily reading hub + announcements + "Two-Day Rule" freeze modal + admin shield |
 | `/quests` | QuestsPage | Protected | Active quests + journey map + completed quests |
-| `/friends` | FriendsPage | Protected | Invite code, requests, friend list + nudge |
-| `/profile` | ProfilePage | Protected | Stats, calendar, badges, freeze count |
+| `/friends` | FriendsPage | Protected | Friend discovery list, requests, friend list + nudge |
+| `/profile` | ProfilePage | Protected | Stats, calendar, badges, avatar editing, freeze count |
 | `/read/:questDayId` | ReadingFlowPage | Protected | Full-screen 5-7 step reading flow |
 | `/admin` | AdminPage | Leader/Admin | Quest builder, engagement, announcements |
 | `/*` | — | — | Redirects to `/` |
@@ -474,17 +532,32 @@ Key exports: `user, session, profile, loading, isNewUser, signOut, refreshProfil
 ### Onboarding detection
 `ProtectedRoute` reads `profile.onboarding_completed` directly from the shared context profile object. `OnboardingPage` calls `patchProfile({ onboarding_completed: true })` before navigating to `/`.
 
+### Onboarding flow — 2-step
+Step 1: enter display name. Step 2: choose preset avatar or upload photo (with "Skip" option). On finish, updates `display_name`, `onboarding_completed`, `avatar_type`, `avatar_preset`, and optionally `avatar_url` in one DB call.
+
+### Avatar system
+- **Preset avatars**: 8 options (lion, eagle, flame, shield, mountain, star, compass, crown) rendered as emoji on gradient circle backgrounds via `PRESET_AVATARS` in `Avatar.tsx`
+- **Custom photos**: uploaded to Supabase Storage `avatars` bucket at `{userId}/avatar.webp`, client-side resized to max 256x256 using canvas, converted to WebP
+- **`Avatar` component**: shared across all display points, supports `sm` (32px), `md` (48px), `lg` (80px) sizes. Falls back to initials on purple background when no avatar is set.
+- **`AvatarPicker` component**: used in onboarding (step 2) and profile page (edit mode)
+
 ### `.maybeSingle()` for nullable lookups
 Any Supabase query that may return 0 rows must use `.maybeSingle()`, not `.single()`. `.single()` returns 406 on no match.
 
 ### Profiles RLS
-All authenticated users can read any profile row (`profiles_select_authenticated` policy). This is required for invite code lookup and friend streak display.
+All authenticated users can read any profile row (`profiles_select_authenticated` policy). This is required for friend discovery and friend streak display.
+
+### Friend discovery (Phase 3B)
+Replaced invite code entry UI with a discovery list. `useFriends` fetches all profiles, filters out self and anyone already connected (friend or pending), and exposes `discoverableUsers` array. FriendsPage shows a searchable list with "Add" button → creates pending friendship. The `invite_code` column is kept in the DB but the UI for entering codes has been removed (replaced by `AddFriendSection` → discovery list in `FriendsPage`).
 
 ### Admin access
 Leaders/admins see a purple shield icon in the Home page header (next to streak counter) that navigates to `/admin`. `AdminRoute` waits for both `user` and `profile` to be loaded before checking `profile.role`. Without the null-profile guard, a race condition between auth loading and profile fetching caused premature redirect to `/`.
 
 ### Seed data — passage text
-All 30 days of "Journey Through Matthew" have passage summaries filled in.
+All 30 days of "Journey Through Matthew" have passage summaries filled in. Luke–Acts quest has 79 days with passage references but `passage_text` set to NULL (Clay can fill these in via admin quest builder). Passage text is used for share/celebration screens only — the reading step encourages opening a physical Bible.
+
+### PassageStep — physical Bible encouragement
+For reading quests, `PassageStep` shows the passage reference prominently and an encouraging message card (rotated from 6 options) instead of displaying passage text. Includes a biblegateway.com fallback link. Button says "I've Read It". Discipline/event quests still display `passage_text` in-step.
 
 ### Reading flow — "already completed" guard
 The `complete_reading` RPC throws if the user already completed today. `ReadingFlowPage` catches this (with `console.error` logging) and still shows the celebration screen.
@@ -498,11 +571,23 @@ The `complete_reading` RPC throws if the user already completed today. `ReadingF
 ### Journey Map — SVG winding path
 `JourneyMap.tsx` renders an SVG-based winding S-curve path connecting all quest day nodes. Nodes follow a horizontal pattern (50% → 78% → 50% → 22%, repeating) with 100px vertical spacing. The path uses cubic bezier curves and has a gradient (teal → gold → gray) based on completion progress. Decorative sparkles and glow filters add visual depth. Milestone nodes get a purple glow; today's node gets a gold/teal glow.
 
+### XP and level system (Phase 3B updates)
+- Base XP: 25 (was 20). Early bird +5, weekend +10 unchanged.
+- Milestone bonus: +100 XP (was +50). Quest completion: +1000 XP (was +200).
+- Streak badges also award XP bonuses (see §7 table).
+- `check_and_award_badges` now returns VOID (was JSONB) — badge detection for celebration screen uses a time-window query in `complete_reading` instead.
+
+### Luke–Acts quest
+79 reading days across 90 calendar days (students get ~11 rest/catch-up days). 17 section milestones trigger section badges. Quest completion triggers "The Gospel Unleashed" badge. Quest seeded as `is_active = false` — set to `true` when Clay is ready to launch.
+
 ### Vercel deployment
 `vercel.json` has an SPA rewrite rule (`/(.*) → /index.html`) so client-side routes like `/admin` are served correctly. Without this, direct navigation to non-root paths returns 404.
 
 ### PWA service worker caching
 `vite-plugin-pwa` with `registerType: 'autoUpdate'` precaches all JS/CSS/HTML. After deploying new code, users may see the old version until the service worker updates (typically on next page load). For immediate updates: hard refresh, clear site data, or use incognito. `runtimeCaching` is empty — API calls to Supabase are NOT cached by the service worker.
+
+### SQL migration 007 — DROP before CREATE
+`complete_reading` and `check_and_award_badges` had their return types changed in migration 007. PostgreSQL requires `DROP FUNCTION` before `CREATE OR REPLACE` when the return type changes. The migration includes `DROP FUNCTION IF EXISTS` statements for both.
 
 ---
 
