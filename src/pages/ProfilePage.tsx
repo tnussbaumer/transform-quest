@@ -14,7 +14,7 @@ import { Button } from '../components/ui/Button'
 
 export function ProfilePage() {
   const { signOut, patchProfile } = useAuth()
-  const { profile, completions, loading } = useProfile()
+  const { profile, completions, loading, refetch } = useProfile()
   const { allBadges, earnedBadges } = useBadges()
   const [editingAvatar, setEditingAvatar] = useState(false)
 
@@ -33,6 +33,7 @@ export function ProfilePage() {
       .update(update)
       .eq('id', profile.id)
     patchProfile(update)
+    await refetch()
     setEditingAvatar(false)
   }
 
