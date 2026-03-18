@@ -7,6 +7,7 @@ interface QuestState {
   questDay: QuestDay | null
   dayNumber: number
   totalDays: number
+  isCurrentDayCompleted: boolean
   loading: boolean
   error: string | null
 }
@@ -16,6 +17,7 @@ export function useQuest(): QuestState {
   const [questDay, setQuestDay] = useState<QuestDay | null>(null)
   const [dayNumber, setDayNumber] = useState(0)
   const [totalDays, setTotalDays] = useState(0)
+  const [isCurrentDayCompleted, setIsCurrentDayCompleted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -68,6 +70,20 @@ export function useQuest(): QuestState {
         // Find today's quest_day
         const todayDay = days?.find(d => d.day_number === currentDay) ?? null
         setQuestDay(todayDay)
+
+        // Check completion in the SAME async flow — no race condition
+        if (todayDay) {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            const { data: completion } = await supabase
+              .from('completions')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('quest_day_id', todayDay.id)
+              .maybeSingle()
+            setIsCurrentDayCompleted(!!completion)
+          }
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load quest')
       } finally {
@@ -78,5 +94,5 @@ export function useQuest(): QuestState {
     load()
   }, [])
 
-  return { quest, questDay, dayNumber, totalDays, loading, error }
+  return { quest, questDay, dayNumber, totalDays, isCurrentDayCompleted, loading, error }
 }

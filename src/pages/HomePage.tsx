@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom'
 import { Flame, Compass, Snowflake, Shield } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useQuest } from '../hooks/useQuest'
-import { useCompletion } from '../hooks/useCompletion'
 import { useProfile } from '../hooks/useProfile'
 import { useFriends } from '../hooks/useFriends'
 import { useStreakFreeze } from '../hooks/useStreakFreeze'
@@ -16,8 +15,7 @@ import { Button } from '../components/ui/Button'
 
 export function HomePage() {
   const { profile } = useAuth()
-  const { quest, questDay, dayNumber, totalDays, loading: questLoading } = useQuest()
-  const { isCompletedToday, loading: completionLoading } = useCompletion(questDay?.id)
+  const { quest, questDay, dayNumber, totalDays, isCurrentDayCompleted, loading: questLoading } = useQuest()
   const { completions, profile: fullProfile } = useProfile()
   const { friends } = useFriends()
   const { needsFreeze, freezesAvailable, useFreeze, dismiss } = useStreakFreeze()
@@ -28,8 +26,7 @@ export function HomePage() {
   const streak = fullProfile?.current_streak ?? profile?.current_streak ?? 0
   const totalXp = fullProfile?.total_xp ?? profile?.total_xp ?? 0
 
-  // Only wait for completion check if we actually have a quest day to check
-  const loading = questLoading || (!!questDay?.id && completionLoading)
+  const loading = questLoading
 
   return (
     <div className="px-4 py-6 space-y-6">
@@ -120,7 +117,7 @@ export function HomePage() {
             questDay={questDay}
             dayNumber={dayNumber}
             totalDays={totalDays}
-            isCompleted={isCompletedToday}
+            isCompleted={isCurrentDayCompleted}
           />
         </div>
       ) : (
