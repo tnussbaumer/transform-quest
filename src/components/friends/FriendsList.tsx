@@ -6,9 +6,10 @@ interface FriendsListProps {
   hasNudgedToday: (friendId: string) => boolean
   onNudge: (toUserId: string, questDayId: string) => Promise<void>
   currentQuestDayId?: string
+  completedTodayIds?: Set<string>
 }
 
-export function FriendsList({ friends, hasNudgedToday, onNudge, currentQuestDayId }: FriendsListProps) {
+export function FriendsList({ friends, hasNudgedToday, onNudge, currentQuestDayId, completedTodayIds }: FriendsListProps) {
   if (friends.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-8 text-center">
@@ -29,6 +30,7 @@ export function FriendsList({ friends, hasNudgedToday, onNudge, currentQuestDayI
           friendship={friendship}
           hasNudgedToday={hasNudgedToday(friendship.friend.id)}
           onNudge={() => onNudge(friendship.friend.id, currentQuestDayId ?? '')}
+          completedToday={completedTodayIds?.has(friendship.friend.id) ?? false}
         />
       ))}
     </div>

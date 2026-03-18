@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, UserPlus } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useFriends } from '../../hooks/useFriends'
 import { useNudge } from '../../hooks/useNudge'
 import { useQuest } from '../../hooks/useQuest'
+import { supabase } from '../../lib/supabase'
 import { Avatar } from '../profile/Avatar'
 import { PendingRequests } from '../friends/PendingRequests'
 import { FriendsList } from '../friends/FriendsList'
@@ -18,6 +19,20 @@ export function FriendsTab() {
   const { hasNudgedToday, nudgeFriend } = useNudge()
   const [searchQuery, setSearchQuery] = useState('')
   const [sendingTo, setSendingTo] = useState<string | null>(null)
+  const [completedTodayIds, setCompletedTodayIds] = useState<Set<string>>(new Set())
+
+  // Fetch which friends completed today's quest day
+  useEffect(() => {
+    if (!questDay?.id) return
+    supabase
+      .from('completions')
+      .select('user_id')
+      .eq('quest_day_id', questDay.id)
+      .then(({ data }) => {
+        const ids = new Set(((data as { user_id: string }[]) ?? []).map(c => c.user_id))
+        setCompletedTodayIds(ids)
+      })
+  }, [questDay?.id])
 
   if (!profile) return null
 
@@ -140,6 +155,7 @@ export function FriendsTab() {
               hasNudgedToday={hasNudgedToday}
               onNudge={nudgeFriend}
               currentQuestDayId={questDay?.id}
+              completedTodayIds={completedTodayIds}
             />
           </Card>
         )}

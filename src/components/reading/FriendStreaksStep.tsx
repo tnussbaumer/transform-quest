@@ -1,7 +1,8 @@
+import { useState, useEffect } from 'react'
 import { Check } from 'lucide-react'
 import { useFriends } from '../../hooks/useFriends'
 import { useNudge } from '../../hooks/useNudge'
-import { isCompletedToday } from '../../lib/streakUtils'
+import { supabase } from '../../lib/supabase'
 import { Avatar } from '../profile/Avatar'
 import { Button } from '../ui/Button'
 import { ShareButton } from './ShareButton'
@@ -18,15 +19,16 @@ interface FriendStreaksStepProps {
 
 function FriendRow({
   friendship,
+  completed,
   hasNudgedToday,
   onNudge,
 }: {
   friendship: FriendWithProfile
+  completed: boolean
   hasNudgedToday: boolean
   onNudge: () => void
 }) {
   const { friend } = friendship
-  const completed = isCompletedToday(friend.last_completed_at)
 
   return (
     <div className="flex items-center gap-3 py-2.5">
@@ -66,9 +68,23 @@ export function FriendStreaksStep({
 }: FriendStreaksStepProps) {
   const { friends, loading } = useFriends()
   const { hasNudgedToday, nudgeFriend } = useNudge()
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set())
 
-  const notDone = friends.filter(f => !isCompletedToday(f.friend.last_completed_at))
-  const done    = friends.filter(f =>  isCompletedToday(f.friend.last_completed_at))
+  // Fetch which users completed today's quest day
+  useEffect(() => {
+    if (!questDayId) return
+    supabase
+      .from('completions')
+      .select('user_id')
+      .eq('quest_day_id', questDayId)
+      .then(({ data }) => {
+        const ids = new Set(((data as { user_id: string }[]) ?? []).map(c => c.user_id))
+        setCompletedIds(ids)
+      })
+  }, [questDayId])
+
+  const notDone = friends.filter(f => !completedIds.has(f.friend.id))
+  const done    = friends.filter(f =>  completedIds.has(f.friend.id))
 
   if (!loading && friends.length === 0) {
     return (
@@ -112,6 +128,7 @@ export function FriendStreaksStep({
                 <FriendRow
                   key={f.id}
                   friendship={f}
+                  completed={false}
                   hasNudgedToday={hasNudgedToday(f.friend.id)}
                   onNudge={() => nudgeFriend(f.friend.id, questDayId)}
                 />
@@ -123,13 +140,14 @@ export function FriendStreaksStep({
         {done.length > 0 && (
           <div>
             <p className="text-xs font-extrabold uppercase tracking-widest text-tq-success mb-2">
-              Completed today ✓
+              Completed today
             </p>
             <div className="bg-tq-surface rounded-2xl px-4 divide-y divide-tq-border/40 border border-tq-border/50">
               {done.map(f => (
                 <FriendRow
                   key={f.id}
                   friendship={f}
+                  completed={true}
                   hasNudgedToday={false}
                   onNudge={() => {}}
                 />

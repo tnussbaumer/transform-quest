@@ -1,5 +1,4 @@
 import { Flame, Check } from 'lucide-react'
-import { isCompletedToday } from '../../lib/streakUtils'
 import { Avatar } from '../profile/Avatar'
 import type { FriendWithProfile } from '../../types/database'
 
@@ -8,11 +7,11 @@ interface FriendCardProps {
   hasNudgedToday: boolean
   onNudge: () => void
   nudging?: boolean
+  completedToday: boolean
 }
 
-export function FriendCard({ friendship, hasNudgedToday, onNudge, nudging = false }: FriendCardProps) {
+export function FriendCard({ friendship, hasNudgedToday, onNudge, nudging = false, completedToday }: FriendCardProps) {
   const { friend, mutual_streak } = friendship
-  const completedToday = isCompletedToday(friend.last_completed_at)
 
   return (
     <div className="flex items-center gap-3 py-3 px-1">
