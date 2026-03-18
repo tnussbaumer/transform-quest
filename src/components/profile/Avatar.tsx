@@ -1,12 +1,12 @@
 const PRESET_AVATARS: Record<string, { emoji: string; bg: string }> = {
-  lion:     { emoji: '🦁', bg: 'from-amber-600 to-amber-800' },
-  eagle:    { emoji: '🦅', bg: 'from-sky-600 to-sky-800' },
-  flame:    { emoji: '🔥', bg: 'from-orange-500 to-red-700' },
-  shield:   { emoji: '🛡️', bg: 'from-indigo-500 to-indigo-800' },
-  mountain: { emoji: '⛰️', bg: 'from-emerald-600 to-emerald-900' },
-  star:     { emoji: '⭐', bg: 'from-yellow-500 to-amber-700' },
-  compass:  { emoji: '🧭', bg: 'from-teal-500 to-teal-800' },
-  crown:    { emoji: '👑', bg: 'from-purple-500 to-purple-800' },
+  lion:     { emoji: '🦁', bg: 'from-[#E09800] to-[#FFB830]' },
+  eagle:    { emoji: '🦅', bg: 'from-[#009B82] to-[#00C9A7]' },
+  flame:    { emoji: '🔥', bg: 'from-[#FF6B35] to-[#FFB830]' },
+  shield:   { emoji: '🛡️', bg: 'from-[#7340E0] to-[#8B5CF6]' },
+  mountain: { emoji: '⛰️', bg: 'from-[#009B82] to-[#00C9A7]/80' },
+  star:     { emoji: '⭐', bg: 'from-[#FFB830] to-[#FFD470]' },
+  compass:  { emoji: '🧭', bg: 'from-[#00C9A7] to-[#33FFD4]' },
+  crown:    { emoji: '👑', bg: 'from-[#8B5CF6] to-[#A78BFA]' },
 }
 
 export { PRESET_AVATARS }

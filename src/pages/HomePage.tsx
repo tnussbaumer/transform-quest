@@ -32,8 +32,16 @@ export function HomePage() {
 
   return (
     <div className="px-4 py-6 space-y-6">
-      {/* Header */}
-      <header className="flex items-center justify-between">
+      {/* Header with subtle gradient */}
+      <header
+        className="flex items-center justify-between animate-fade-up"
+        style={{
+          background: 'linear-gradient(180deg, rgba(139,92,246,0.06) 0%, transparent 100%)',
+          margin: '-24px -16px 0',
+          padding: '24px 16px 0',
+          borderRadius: '0 0 24px 24px',
+        }}
+      >
         <div>
           <h1 className="text-2xl font-extrabold text-tq-text leading-tight">
             Hey {displayName}!
@@ -94,49 +102,71 @@ export function HomePage() {
 
       {/* Today's Reading Card */}
       {loading ? (
-        <Card>
-          <div className="h-32 flex items-center justify-center">
-            <span className="text-tq-text-muted text-sm">Loading today's reading…</span>
-          </div>
-        </Card>
+        <div className="animate-fade-up" style={{ animationDelay: '50ms' }}>
+          <Card>
+            <div className="space-y-4">
+              <div className="skeleton h-4 w-32" />
+              <div className="skeleton h-7 w-48" />
+              <div className="skeleton h-4 w-24" />
+              <div className="skeleton h-12 w-full rounded-xl" />
+            </div>
+          </Card>
+        </div>
       ) : quest && questDay ? (
-        <TodaysReadingCard
-          quest={quest}
-          questDay={questDay}
-          dayNumber={dayNumber}
-          totalDays={totalDays}
-          isCompleted={isCompletedToday}
-        />
+        <div className="animate-fade-up" style={{ animationDelay: '50ms' }}>
+          <TodaysReadingCard
+            quest={quest}
+            questDay={questDay}
+            dayNumber={dayNumber}
+            totalDays={totalDays}
+            isCompleted={isCompletedToday}
+          />
+        </div>
       ) : (
-        /* Empty state — no active quest */
-        <Card>
-          <div className="flex flex-col items-center gap-3 py-6 text-center">
-            <Compass size={40} className="text-tq-text-muted" />
-            <p className="text-tq-text font-bold">No active quest yet</p>
-            <p className="text-tq-text-sec text-sm">
-              Check back soon — check back soon!
-            </p>
-          </div>
-        </Card>
+        <div className="animate-fade-up" style={{ animationDelay: '50ms' }}>
+          <Card>
+            <div className="flex flex-col items-center gap-3 py-8 text-center">
+              <div className="w-16 h-16 rounded-full bg-tq-surface-2 flex items-center justify-center">
+                <Compass size={32} className="text-tq-text-muted" />
+              </div>
+              <p className="text-tq-text font-bold text-lg">No active quest yet</p>
+              <p className="text-tq-text-sec text-sm max-w-[240px]">
+                Your next adventure is coming soon. Check back later!
+              </p>
+            </div>
+          </Card>
+        </div>
       )}
 
       {/* Weekly Streak Bar */}
-      <Card>
-        <WeeklyStreakBar completions={completions} />
-      </Card>
+      <div className="animate-fade-up" style={{ animationDelay: '150ms' }}>
+        <Card>
+          <WeeklyStreakBar completions={completions} />
+        </Card>
+      </div>
 
       {/* Quick Stats Row */}
-      {!loading && (
-        <QuickStatsRow
-          streak={streak}
-          totalXp={totalXp}
-          dayNumber={dayNumber}
-          totalDays={totalDays}
-        />
+      {loading ? (
+        <div className="grid grid-cols-3 gap-3 animate-fade-up" style={{ animationDelay: '250ms' }}>
+          {[0, 1, 2].map(i => (
+            <Card key={i}><div className="space-y-2"><div className="skeleton h-5 w-5 rounded-full" /><div className="skeleton h-7 w-12" /><div className="skeleton h-3 w-16" /></div></Card>
+          ))}
+        </div>
+      ) : (
+        <div className="animate-fade-up" style={{ animationDelay: '250ms' }}>
+          <QuickStatsRow
+            streak={streak}
+            totalXp={totalXp}
+            dayNumber={dayNumber}
+            totalDays={totalDays}
+          />
+        </div>
       )}
 
       {/* Friend Activity */}
-      <FriendActivitySnippet friends={friends} />
+      <div className="animate-fade-up" style={{ animationDelay: '350ms' }}>
+        <FriendActivitySnippet friends={friends} />
+      </div>
     </div>
   )
 }

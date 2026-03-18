@@ -13,6 +13,8 @@ const DISCIPLINE_QUESTIONS = [
   'What will you do differently?',
 ]
 
+const MAX_CHARS = 500
+
 interface QuestionStepProps {
   questionIndex: number   // 0-based (0, 1, 2)
   value: string
@@ -36,6 +38,7 @@ export function QuestionStep({
     ? DISCIPLINE_QUESTIONS
     : READING_QUESTIONS
   const question = questions[questionIndex]
+  const charCount = value.length
 
   return (
     <div className="flex flex-col min-h-screen px-4">
@@ -49,17 +52,25 @@ export function QuestionStep({
             {question}
           </h2>
           <p className="text-tq-text-muted text-sm">
-            Write 1–2 sentences. Be honest with yourself.
+            Write 1-2 sentences. Be honest with yourself.
           </p>
         </div>
 
-        <Textarea
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          placeholder="Type your response here…"
-          autoFocus
-          inputMode="text"
-        />
+        <div>
+          <Textarea
+            value={value}
+            onChange={e => onChange(e.target.value.slice(0, MAX_CHARS))}
+            placeholder="Type your response here..."
+            autoFocus
+            inputMode="text"
+          />
+          <p className={[
+            'text-xs mt-1.5 text-right tabular-nums transition-colors',
+            charCount > MAX_CHARS * 0.9 ? 'text-tq-gold' : 'text-tq-text-muted/50',
+          ].join(' ')}>
+            {charCount}/{MAX_CHARS}
+          </p>
+        </div>
       </div>
 
       {/* Bottom button */}
@@ -69,7 +80,7 @@ export function QuestionStep({
           onClick={onNext}
           disabled={!value.trim() || submitting}
         >
-          {submitting ? 'Saving…' : isLast ? 'Finish' : 'Next'}
+          {submitting ? 'Saving...' : isLast ? 'Finish' : 'Next'}
         </Button>
       </div>
     </div>

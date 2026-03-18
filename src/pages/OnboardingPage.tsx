@@ -1,10 +1,27 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ChevronLeft } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { AvatarPicker } from '../components/profile/AvatarPicker'
+
+function StepDots({ current, total }: { current: number; total: number }) {
+  return (
+    <div className="flex items-center justify-center gap-2">
+      {Array.from({ length: total }, (_, i) => (
+        <div
+          key={i}
+          className={[
+            'h-1.5 rounded-full transition-all duration-300',
+            i === current ? 'w-6 bg-tq-teal' : 'w-1.5 bg-tq-border',
+          ].join(' ')}
+        />
+      ))}
+    </div>
+  )
+}
 
 export function OnboardingPage() {
   const { user, patchProfile } = useAuth()
@@ -64,6 +81,8 @@ export function OnboardingPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm space-y-8">
+          <StepDots current={0} total={2} />
+
           <div className="text-center space-y-2">
             <div className="text-5xl mb-4">👋</div>
             <h1 className="text-3xl font-extrabold text-tq-text">Welcome!</h1>
@@ -99,7 +118,17 @@ export function OnboardingPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm space-y-8">
+        <StepDots current={1} total={2} />
+
         <div className="text-center space-y-2">
+          <button
+            type="button"
+            onClick={() => setStep('name')}
+            className="inline-flex items-center gap-1 text-tq-text-sec text-sm font-semibold hover:text-tq-teal transition-colors mb-2"
+          >
+            <ChevronLeft size={16} />
+            Back
+          </button>
           <h1 className="text-3xl font-extrabold text-tq-text">Choose Your Avatar</h1>
           <p className="text-tq-text-sec">
             Pick one that represents you, or upload a photo!
