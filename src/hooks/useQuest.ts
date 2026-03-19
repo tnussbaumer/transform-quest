@@ -44,18 +44,17 @@ export function useQuest(): QuestState {
         const activeQuest = quests[0]
         setQuest(activeQuest)
 
-        // Calculate day number from quest start_date vs today
-        const start = new Date(activeQuest.start_date)
+        // Calculate day number from quest start_date vs today.
+        // start_date is a DATE string "YYYY-MM-DD" — parse as local date parts
+        // to avoid UTC-vs-local timezone mismatch.
+        const [sy, sm, sd] = activeQuest.start_date.split('-').map(Number)
+        const start = new Date(sy, sm - 1, sd)  // local midnight
         const today = new Date()
-        start.setHours(0, 0, 0, 0)
         today.setHours(0, 0, 0, 0)
         const diffMs = today.getTime() - start.getTime()
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-        const currentDay = Math.max(1, Math.min(diffDays + 1, 30))
 
-        setDayNumber(currentDay)
-
-        // Fetch all quest_days to know total count
+        // Fetch all quest_days first so we know the total count for clamping
         const { data: daysData, error: dErr } = await supabase
           .from('quest_days')
           .select('*')
@@ -64,8 +63,12 @@ export function useQuest(): QuestState {
 
         if (dErr) throw dErr
         const days = daysData as QuestDay[] | null
+        const totalDayCount = days?.length ?? 0
+        setTotalDays(totalDayCount)
 
-        setTotalDays(days?.length ?? 0)
+        const currentDay = Math.max(1, Math.min(diffDays + 1, totalDayCount))
+
+        setDayNumber(currentDay)
 
         // Find today's quest_day
         const todayDay = days?.find(d => d.day_number === currentDay) ?? null
