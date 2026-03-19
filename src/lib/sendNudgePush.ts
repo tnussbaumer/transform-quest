@@ -14,11 +14,15 @@ export async function sendNudgePush(
 ): Promise<void> {
   try {
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
+    if (!session) {
+      console.warn('[NudgePush] No session — skipping push')
+      return
+    }
 
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 
-    await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+    console.log('[NudgePush] Calling Edge Function for user:', toUserId)
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -33,8 +37,10 @@ export async function sendNudgePush(
         tag: 'tq-nudge',
       }),
     })
-  } catch {
-    // Fire-and-forget — don't break the nudge flow
-    console.warn('Nudge push notification failed (non-critical)')
+
+    const result = await response.json().catch(() => null)
+    console.log('[NudgePush] Edge Function response:', response.status, JSON.stringify(result))
+  } catch (err) {
+    console.warn('[NudgePush] Failed (non-critical):', err)
   }
 }
