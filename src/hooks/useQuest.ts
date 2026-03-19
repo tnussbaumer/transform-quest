@@ -54,6 +54,10 @@ export function useQuest(): QuestState {
         const diffMs = today.getTime() - start.getTime()
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
+        console.log('[Quest] start_date raw:', activeQuest.start_date)
+        console.log('[Quest] parsed start:', start.toISOString(), 'local today:', today.toISOString())
+        console.log('[Quest] diffDays:', diffDays, '→ currentDay will be:', diffDays + 1)
+
         // Fetch all quest_days first so we know the total count for clamping
         const { data: daysData, error: dErr } = await supabase
           .from('quest_days')

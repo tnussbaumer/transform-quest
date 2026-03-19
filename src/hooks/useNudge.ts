@@ -44,11 +44,20 @@ export function useNudge(): NudgeState {
   }
 
   async function nudgeFriend(toUserId: string, questDayId: string, fromDisplayName?: string) {
-    const { data } = await supabase.rpc('send_nudge', {
+    if (!questDayId) {
+      console.error('[Nudge] No questDayId — cannot nudge without an active quest day')
+      return
+    }
+    const { data, error: rpcError } = await supabase.rpc('send_nudge', {
       p_to_user_id: toUserId,
       p_quest_day_id: questDayId,
     })
+    if (rpcError) {
+      console.error('[Nudge] RPC error:', rpcError)
+      throw new Error(rpcError.message)
+    }
     const result = data as { success: boolean; reason?: string } | null
+    console.log('[Nudge] RPC result:', result)
     // Always refetch — even if already_nudged_today, we want the UI to reflect it
     await fetchTodaysNudges()
     if (result && !result.success && result.reason !== 'already_nudged_today') {
