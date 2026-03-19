@@ -54,28 +54,37 @@ export function getNotificationPermission(): NotificationPermission {
  * Returns the PushSubscription or null if denied/failed.
  */
 export async function subscribeToPush(): Promise<PushSubscription | null> {
-  if (!isPushSupported()) return null
+  if (!isPushSupported()) {
+    console.log('[Push] Push not supported in this browser')
+    return null
+  }
 
   const permission = await Notification.requestPermission()
+  console.log('[Push] Permission result:', permission)
   if (permission !== 'granted') return null
 
   const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string
+  console.log('[Push] VAPID key exists:', !!vapidPublicKey, 'length:', vapidPublicKey?.length ?? 0)
   if (!vapidPublicKey) {
-    console.error('VITE_VAPID_PUBLIC_KEY not configured')
+    console.error('[Push] VITE_VAPID_PUBLIC_KEY not configured')
     return null
   }
 
   try {
     const registration = await navigator.serviceWorker.ready
+    console.log('[Push] Service worker ready')
     const keyArray = urlBase64ToUint8Array(vapidPublicKey)
+    console.log('[Push] Key array length:', keyArray.length)
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: keyArray.buffer as ArrayBuffer,
     })
+    console.log('[Push] Subscription JSON:', JSON.stringify(subscription.toJSON()))
     await savePushSubscription(subscription)
+    console.log('[Push] Save completed')
     return subscription
   } catch (err) {
-    console.error('Push subscription failed:', err)
+    console.error('[Push] Subscription failed — full error:', err)
     return null
   }
 }
@@ -97,12 +106,21 @@ export async function unsubscribeFromPush(): Promise<void> {
 /** Save a PushSubscription to the current user's profile */
 export async function savePushSubscription(subscription: PushSubscription): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
+  if (!user) {
+    console.error('[Push] savePushSubscription: no authenticated user found')
+    return
+  }
 
-  await supabase
+  const { error } = await supabase
     .from('profiles')
     .update({ push_subscription: subscription.toJSON() })
     .eq('id', user.id)
+
+  if (error) {
+    console.error('[Push] savePushSubscription: Supabase update failed:', error)
+  } else {
+    console.log('[Push] savePushSubscription: success for user', user.id)
+  }
 }
 
 /** Clear the push_subscription from the current user's profile */
