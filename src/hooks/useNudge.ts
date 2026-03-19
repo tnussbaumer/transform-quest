@@ -20,15 +20,20 @@ export function useNudge(): NudgeState {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const todayStart = new Date()
-      todayStart.setHours(0, 0, 0, 0)
+      // Use UTC midnight to match the send_nudge RPC's date_trunc('day', NOW() AT TIME ZONE 'UTC')
+      const now = new Date()
+      const todayStartUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('nudges')
         .select('*')
         .eq('from_user', user.id)
-        .gte('nudged_at', todayStart.toISOString())
+        .gte('nudged_at', todayStartUTC.toISOString())
 
+      if (error) {
+        console.error('[Nudge] Fetch error:', error)
+      }
+      console.log('[Nudge] Fetched nudges since', todayStartUTC.toISOString(), '→', (data as Nudge[] | null)?.length ?? 0, 'results')
       setTodaysNudges((data as Nudge[] | null) ?? [])
     } finally {
       setLoading(false)
