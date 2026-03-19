@@ -2,7 +2,7 @@
  * Supabase Edge Function: send-push-notification
  *
  * Sends Web Push notifications to specified users.
- * Uses the Web Push protocol directly (no npm web-push library — Deno compatible).
+ * Implements RFC 8291 payload encryption using Deno Web Crypto API.
  *
  * POST /send-push-notification
  * Body: { user_ids: string[], title: string, body: string, url?: string, tag?: string }
@@ -10,7 +10,6 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import * as jose from 'https://deno.land/x/jose@v5.2.0/index.ts'
 
 const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY')!
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY')!
@@ -27,49 +26,9 @@ interface PushSubscriptionJSON {
   }
 }
 
-/**
- * Build VAPID Authorization header for the push endpoint.
- * Uses ES256 (P-256 ECDSA) JWT signed with the VAPID private key.
- */
-async function buildVapidAuth(endpoint: string): Promise<{ authorization: string; cryptoKey: string }> {
-  const audience = new URL(endpoint).origin
-
-  // Import the VAPID private key (URL-safe base64 encoded raw P-256 private key)
-  const privateKeyBuffer = base64UrlDecode(VAPID_PRIVATE_KEY)
-  const privateKey = await jose.importPKCS8(
-    `-----BEGIN PRIVATE KEY-----\n${arrayBufferToBase64(privateKeyBuffer)}\n-----END PRIVATE KEY-----`,
-    'ES256'
-  ).catch(async () => {
-    // Fallback: try importing as raw EC key via JWK
-    const jwk = {
-      kty: 'EC',
-      crv: 'P-256',
-      d: VAPID_PRIVATE_KEY,
-      x: '', // Will be derived
-      y: '', // Will be derived
-    }
-    // For raw VAPID keys, we need to derive x,y from the public key
-    const pubKeyBytes = base64UrlDecode(VAPID_PUBLIC_KEY)
-    // Uncompressed public key: 0x04 || x (32 bytes) || y (32 bytes)
-    const x = base64UrlEncode(pubKeyBytes.slice(1, 33))
-    const y = base64UrlEncode(pubKeyBytes.slice(33, 65))
-    jwk.x = x
-    jwk.y = y
-    return jose.importJWK(jwk, 'ES256')
-  })
-
-  const jwt = await new jose.SignJWT({})
-    .setProtectedHeader({ alg: 'ES256' })
-    .setAudience(audience)
-    .setSubject(VAPID_SUBJECT)
-    .setExpirationTime('24h')
-    .sign(privateKey)
-
-  return {
-    authorization: `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`,
-    cryptoKey: `p256ecdsa=${VAPID_PUBLIC_KEY}`,
-  }
-}
+// ============================================================
+// Base64 URL helpers
+// ============================================================
 
 function base64UrlDecode(str: string): Uint8Array {
   const base64 = str.replace(/-/g, '+').replace(/_/g, '/')
@@ -90,39 +49,271 @@ function base64UrlEncode(bytes: Uint8Array): string {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
-function arrayBufferToBase64(bytes: Uint8Array): string {
-  let binary = ''
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte)
+function concatUint8Arrays(...arrays: Uint8Array[]): Uint8Array {
+  const totalLength = arrays.reduce((sum, a) => sum + a.length, 0)
+  const result = new Uint8Array(totalLength)
+  let offset = 0
+  for (const arr of arrays) {
+    result.set(arr, offset)
+    offset += arr.length
   }
-  return btoa(binary)
+  return result
+}
+
+// ============================================================
+// VAPID JWT signing (ES256 with raw P-256 private key)
+// ============================================================
+
+/**
+ * Build VAPID Authorization header.
+ * The VAPID private key from web-push generate-vapid-keys is a raw 32-byte
+ * P-256 scalar, URL-safe base64 encoded. We import it as a JWK.
+ */
+async function buildVapidAuth(endpoint: string): Promise<string> {
+  const audience = new URL(endpoint).origin
+
+  // Decode the raw 32-byte private key scalar
+  const privateKeyRaw = base64UrlDecode(VAPID_PRIVATE_KEY)
+  // Decode the 65-byte uncompressed public key (0x04 || x || y)
+  const publicKeyRaw = base64UrlDecode(VAPID_PUBLIC_KEY)
+
+  const x = base64UrlEncode(publicKeyRaw.slice(1, 33))
+  const y = base64UrlEncode(publicKeyRaw.slice(33, 65))
+  const d = base64UrlEncode(privateKeyRaw)
+
+  // Import as ECDSA key for JWT signing
+  const privateKey = await crypto.subtle.importKey(
+    'jwk',
+    { kty: 'EC', crv: 'P-256', x, y, d },
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign']
+  )
+
+  // Build JWT manually (header.payload.signature)
+  const header = { typ: 'JWT', alg: 'ES256' }
+  const now = Math.floor(Date.now() / 1000)
+  const payload = {
+    aud: audience,
+    exp: now + 86400, // 24 hours
+    sub: VAPID_SUBJECT,
+  }
+
+  const encodedHeader = base64UrlEncode(new TextEncoder().encode(JSON.stringify(header)))
+  const encodedPayload = base64UrlEncode(new TextEncoder().encode(JSON.stringify(payload)))
+  const signingInput = `${encodedHeader}.${encodedPayload}`
+
+  const signatureBuffer = await crypto.subtle.sign(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    privateKey,
+    new TextEncoder().encode(signingInput)
+  )
+
+  // ECDSA signature from Web Crypto is DER-encoded, but JWT needs raw r||s (64 bytes)
+  const signature = derToRaw(new Uint8Array(signatureBuffer))
+  const encodedSignature = base64UrlEncode(signature)
+  const jwt = `${signingInput}.${encodedSignature}`
+
+  return `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`
 }
 
 /**
- * Send a push message to a single subscription.
- * Note: This sends an unencrypted payload using the VAPID-only approach.
- * For full RFC 8291 encryption, a more complex implementation is needed.
- * Most push services accept VAPID-authenticated requests with plaintext payloads.
+ * Convert DER-encoded ECDSA signature to raw r||s format (64 bytes).
+ * Web Crypto on some runtimes returns DER, JWT needs raw.
  */
+function derToRaw(der: Uint8Array): Uint8Array {
+  // If it's already 64 bytes, it's already raw
+  if (der.length === 64) return der
+
+  // DER: 0x30 <len> 0x02 <rLen> <r> 0x02 <sLen> <s>
+  const raw = new Uint8Array(64)
+  let offset = 2 // skip 0x30 and total length
+
+  // Read r
+  offset++ // skip 0x02
+  const rLen = der[offset++]
+  const rStart = rLen > 32 ? offset + (rLen - 32) : offset
+  const rDest = rLen < 32 ? 32 - rLen : 0
+  raw.set(der.slice(rStart, offset + rLen), rDest)
+  offset += rLen
+
+  // Read s
+  offset++ // skip 0x02
+  const sLen = der[offset++]
+  const sStart = sLen > 32 ? offset + (sLen - 32) : offset
+  const sDest = sLen < 32 ? 64 - sLen : 32
+  raw.set(der.slice(sStart, offset + sLen), sDest)
+
+  return raw
+}
+
+// ============================================================
+// RFC 8291 Web Push Encryption (aes128gcm)
+// ============================================================
+
+/**
+ * HKDF-SHA256: Extract-then-Expand
+ */
+async function hkdf(
+  salt: Uint8Array,
+  ikm: Uint8Array,
+  info: Uint8Array,
+  length: number
+): Promise<Uint8Array> {
+  // Extract: PRK = HMAC-SHA256(salt, IKM)
+  const prkKey = await crypto.subtle.importKey(
+    'raw', salt, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  )
+  const prk = new Uint8Array(await crypto.subtle.sign('HMAC', prkKey, ikm))
+
+  // Expand: OKM = HMAC-SHA256(PRK, info || 0x01)
+  const infoWithCounter = concatUint8Arrays(info, new Uint8Array([1]))
+  const okmKey = await crypto.subtle.importKey(
+    'raw', prk, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  )
+  const okm = new Uint8Array(await crypto.subtle.sign('HMAC', okmKey, infoWithCounter))
+
+  return okm.slice(0, length)
+}
+
+/**
+ * Build the "info" parameter for HKDF per RFC 8291 / draft-ietf-webpush-encryption.
+ *
+ * For the Content-Encryption-Key:
+ *   info = "Content-Encoding: aes128gcm" || 0x00
+ *
+ * For the nonce:
+ *   info = "Content-Encoding: nonce" || 0x00
+ *
+ * But the IKM derivation info is:
+ *   info = "WebPush: info" || 0x00 || ua_public || as_public
+ */
+function buildWebPushInfo(uaPublic: Uint8Array, asPublic: Uint8Array): Uint8Array {
+  const infoStr = new TextEncoder().encode('WebPush: info\0')
+  return concatUint8Arrays(infoStr, uaPublic, asPublic)
+}
+
+/**
+ * Encrypt a push message payload per RFC 8291 (aes128gcm content encoding).
+ *
+ * Returns the full encrypted body including the aes128gcm header.
+ */
+async function encryptPayload(
+  payload: string,
+  subscriptionKeys: { p256dh: string; auth: string }
+): Promise<Uint8Array> {
+  const plaintext = new TextEncoder().encode(payload)
+
+  // Decode the subscriber's public key (p256dh) and auth secret
+  const uaPublicBytes = base64UrlDecode(subscriptionKeys.p256dh)  // 65 bytes uncompressed
+  const authSecret = base64UrlDecode(subscriptionKeys.auth)       // 16 bytes
+
+  // Import subscriber's public key for ECDH
+  const uaPublicKey = await crypto.subtle.importKey(
+    'raw',
+    uaPublicBytes,
+    { name: 'ECDH', namedCurve: 'P-256' },
+    false,
+    []
+  )
+
+  // Generate ephemeral ECDH key pair (application server key pair for this message)
+  const asKeyPair = await crypto.subtle.generateKey(
+    { name: 'ECDH', namedCurve: 'P-256' },
+    true,
+    ['deriveBits']
+  )
+
+  // Export the ephemeral public key (uncompressed, 65 bytes)
+  const asPublicBytes = new Uint8Array(
+    await crypto.subtle.exportKey('raw', asKeyPair.publicKey)
+  )
+
+  // ECDH shared secret
+  const sharedSecretBits = await crypto.subtle.deriveBits(
+    { name: 'ECDH', public: uaPublicKey },
+    asKeyPair.privateKey,
+    256
+  )
+  const sharedSecret = new Uint8Array(sharedSecretBits)
+
+  // Generate 16-byte random salt
+  const salt = crypto.getRandomValues(new Uint8Array(16))
+
+  // Step 1: Derive the input keying material (IKM) via HKDF
+  //   IKM = HKDF(auth_secret, ecdh_secret, "WebPush: info" || 0x00 || ua_public || as_public, 32)
+  const webPushInfo = buildWebPushInfo(uaPublicBytes, asPublicBytes)
+  const ikm = await hkdf(authSecret, sharedSecret, webPushInfo, 32)
+
+  // Step 2: Derive the content encryption key (CEK) — 16 bytes
+  //   CEK = HKDF(salt, IKM, "Content-Encoding: aes128gcm" || 0x00, 16)
+  const cekInfo = new TextEncoder().encode('Content-Encoding: aes128gcm\0')
+  const cek = await hkdf(salt, ikm, cekInfo, 16)
+
+  // Step 3: Derive the nonce — 12 bytes
+  //   nonce = HKDF(salt, IKM, "Content-Encoding: nonce" || 0x00, 12)
+  const nonceInfo = new TextEncoder().encode('Content-Encoding: nonce\0')
+  const nonce = await hkdf(salt, ikm, nonceInfo, 12)
+
+  // Step 4: Pad the plaintext (add a delimiter byte 0x02 for the final record)
+  const paddedPlaintext = concatUint8Arrays(plaintext, new Uint8Array([2]))
+
+  // Step 5: Encrypt with AES-128-GCM
+  const aesKey = await crypto.subtle.importKey(
+    'raw', cek, { name: 'AES-GCM' }, false, ['encrypt']
+  )
+  const encrypted = new Uint8Array(
+    await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: nonce },
+      aesKey,
+      paddedPlaintext
+    )
+  )
+
+  // Step 6: Build the aes128gcm header:
+  //   salt (16) || rs (4, big-endian uint32) || idlen (1) || keyid (65 = ephemeral public key)
+  const rs = 4096 // record size
+  const rsBytes = new Uint8Array(4)
+  new DataView(rsBytes.buffer).setUint32(0, rs, false) // big-endian
+  const idlen = new Uint8Array([asPublicBytes.length]) // 65
+
+  const header = concatUint8Arrays(salt, rsBytes, idlen, asPublicBytes)
+
+  // Final body = header || encrypted content (ciphertext + 16-byte GCM tag)
+  return concatUint8Arrays(header, encrypted)
+}
+
+// ============================================================
+// Send push message
+// ============================================================
+
 async function sendPushMessage(
   subscription: PushSubscriptionJSON,
   payload: string
 ): Promise<{ success: boolean; statusCode: number; expired: boolean }> {
   try {
-    const { authorization, cryptoKey } = await buildVapidAuth(subscription.endpoint)
+    const authorization = await buildVapidAuth(subscription.endpoint)
+
+    // Encrypt the payload per RFC 8291
+    const encryptedBody = await encryptPayload(payload, subscription.keys)
 
     const response = await fetch(subscription.endpoint, {
       method: 'POST',
       headers: {
         'Authorization': authorization,
-        'Crypto-Key': cryptoKey,
-        'Content-Type': 'application/json',
-        'Content-Encoding': 'aead-aes128gcm',
-        'TTL': '86400', // 24 hours
+        'Content-Type': 'application/octet-stream',
+        'Content-Encoding': 'aes128gcm',
+        'Content-Length': String(encryptedBody.length),
+        'TTL': '86400',
         'Urgency': 'normal',
       },
-      body: payload,
+      body: encryptedBody,
     })
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '')
+      console.error(`Push delivery failed: ${response.status} ${response.statusText}`, text)
+    }
 
     const expired = response.status === 404 || response.status === 410
     return {
@@ -135,6 +326,10 @@ async function sendPushMessage(
     return { success: false, statusCode: 0, expired: false }
   }
 }
+
+// ============================================================
+// HTTP handler
+// ============================================================
 
 Deno.serve(async (req) => {
   // CORS
@@ -180,14 +375,17 @@ Deno.serve(async (req) => {
 
     for (const profile of (profiles || [])) {
       const subscription = profile.push_subscription as PushSubscriptionJSON
-      if (!subscription?.endpoint) continue
+      if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+        console.warn('Skipping profile with incomplete subscription:', profile.id)
+        failed++
+        continue
+      }
 
       const result = await sendPushMessage(subscription, payload)
 
       if (result.success) {
         sent++
       } else if (result.expired) {
-        // Clean up expired subscription
         await supabase
           .from('profiles')
           .update({ push_subscription: null })
