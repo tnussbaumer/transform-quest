@@ -42,6 +42,7 @@ export function ReadingFlowPage() {
   const [result, setResult] = useState<CompleteReadingResult | null>(null)
   const [newBadges, setNewBadges] = useState<NewBadge[]>([])
   const [xpEarned] = useState(() => calculateXp(new Date()))
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!questDayId) return
@@ -76,8 +77,6 @@ export function ReadingFlowPage() {
   }
 
   if (!questDay) return <Navigate to="/" replace />
-
-  const [submitError, setSubmitError] = useState<string | null>(null)
 
   async function handleFinish() {
     if (!questDayId) return
