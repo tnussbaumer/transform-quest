@@ -77,8 +77,11 @@ export function ReadingFlowPage() {
 
   if (!questDay) return <Navigate to="/" replace />
 
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
   async function handleFinish() {
     if (!questDayId) return
+    setSubmitError(null)
     try {
       const res = await submitCompletion(questDayId, {
         answer1: answers.a1,
@@ -87,20 +90,12 @@ export function ReadingFlowPage() {
       }, xpEarned)
       setResult(res)
       setNewBadges(res.new_badges ?? [])
+      setStep(STEP_CELEBRATE)
     } catch (err) {
       console.error('complete_reading RPC failed:', err)
-      setResult({
-        new_streak: profile?.current_streak ?? 1,
-        new_xp: profile?.total_xp ?? 0,
-        new_level: profile?.level_title ?? 'Seedling',
-        new_badges: [],
-        xp_earned: xpEarned,
-        milestone_bonus: 0,
-        quest_complete: false,
-        freeze_earned: false,
-      })
+      const message = err instanceof Error ? err.message : 'Something went wrong saving your reading.'
+      setSubmitError(message)
     }
-    setStep(STEP_CELEBRATE)
   }
 
   function handleCelebrationContinue() {
@@ -158,15 +153,25 @@ export function ReadingFlowPage() {
       )}
 
       {step === STEP_Q3 && (
-        <QuestionStep
-          questionIndex={2}
-          value={answers.a3}
-          onChange={val => setAnswers(a => ({ ...a, a3: val }))}
-          onNext={handleFinish}
-          questType={questType}
-          isLast={true}
-          submitting={submitting}
-        />
+        <>
+          <QuestionStep
+            questionIndex={2}
+            value={answers.a3}
+            onChange={val => setAnswers(a => ({ ...a, a3: val }))}
+            onNext={handleFinish}
+            questType={questType}
+            isLast={true}
+            submitting={submitting}
+          />
+          {submitError && (
+            <div className="fixed bottom-24 left-4 right-4 max-w-[428px] mx-auto">
+              <div className="bg-tq-error/20 border border-tq-error/40 rounded-xl px-4 py-3 text-center">
+                <p className="text-tq-error text-sm font-semibold">{submitError}</p>
+                <button onClick={() => setSubmitError(null)} className="text-tq-text-muted text-xs mt-1">Dismiss</button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {step === STEP_CELEBRATE && (
