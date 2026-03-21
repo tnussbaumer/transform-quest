@@ -142,8 +142,16 @@ BEGIN
     streak_freezes_available = v_new_freezes
   WHERE id = v_user_id;
 
-  -- Award badges
-  v_new_badges := public.check_and_award_badges(v_user_id);
+  -- Award badges (returns VOID — must use PERFORM, not assign)
+  PERFORM public.check_and_award_badges(v_user_id);
+
+  -- Fetch any newly awarded badges for the response
+  SELECT COALESCE(jsonb_agg(jsonb_build_object('id', b.id, 'name', b.name, 'icon', b.icon)), '[]'::JSONB)
+    INTO v_new_badges
+    FROM public.user_badges ub
+    JOIN public.badges b ON b.id = ub.badge_id
+   WHERE ub.user_id = v_user_id
+     AND ub.earned_at >= NOW() - INTERVAL '10 seconds';
 
   -- Update mutual streaks
   PERFORM public.update_mutual_streaks(v_user_id);
