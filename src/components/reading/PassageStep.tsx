@@ -27,6 +27,7 @@ export function PassageStep({ questDay, questType, onContinue }: PassageStepProp
   const [guideOpen, setGuideOpen] = useState(false)
 
   const hasHint = !!questDay.reading_hint?.trim()
+  console.log('[PassageStep] reading_hint:', questDay.reading_hint, 'hasHint:', hasHint)
 
   const encouragement = useMemo(
     () => ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)],
@@ -133,9 +134,10 @@ export function PassageStep({ questDay, questType, onContinue }: PassageStepProp
           {!isDiscipline && (
             <button
               onClick={() => setGuideOpen(true)}
-              className="text-tq-text-muted text-xs font-semibold hover:text-tq-teal transition-colors py-2 min-h-[44px] flex items-center gap-1"
+              className="max-w-xs w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-tq-surface border border-tq-border/50 hover:bg-tq-surface-2 transition-colors min-h-[44px]"
             >
-              📖 How to Read the Bible
+              <span className="text-lg">📖</span>
+              <span className="text-sm font-semibold text-tq-text-sec">How to Read the Bible</span>
             </button>
           )}
         </div>

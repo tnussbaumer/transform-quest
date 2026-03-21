@@ -196,12 +196,13 @@ export function HomePage() {
 
       {/* How to Read the Bible link */}
       {quest && (
-        <div className="flex justify-center -mt-2 animate-fade-up" style={{ animationDelay: '100ms' }}>
+        <div className="animate-fade-up" style={{ animationDelay: '100ms' }}>
           <button
             onClick={() => setGuideOpen(true)}
-            className="text-tq-text-muted text-xs font-semibold hover:text-tq-teal transition-colors py-1 flex items-center gap-1"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-tq-surface border border-tq-border/50 hover:bg-tq-surface-2 transition-colors min-h-[44px]"
           >
-            📖 How to Read the Bible
+            <span className="text-lg">📖</span>
+            <span className="text-sm font-semibold text-tq-text-sec">How to Read the Bible</span>
           </button>
         </div>
       )}
