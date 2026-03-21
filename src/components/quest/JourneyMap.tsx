@@ -1,5 +1,7 @@
-import { useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef, useMemo, useState } from 'react'
 import { Check, BookOpen, Trophy, Star } from 'lucide-react'
+import { Avatar } from '../profile/Avatar'
+import { useAuth } from '../../hooks/useAuth'
 import type { QuestDay } from '../../types/database'
 
 interface JourneyMapProps {
@@ -72,17 +74,38 @@ function getSparkles(count: number) {
   return sparkles
 }
 
+/** Interpolate a point along the bezier path between two node centers at t=[0,1] */
+function interpolateNodes(fromIdx: number, toIdx: number, t: number) {
+  const from = getNodeCenter(fromIdx)
+  const to = getNodeCenter(toIdx)
+  const midY = (from.y + to.y) / 2
+  // Cubic bezier: P0=from, P1=(from.x, midY), P2=(to.x, midY), P3=to
+  const u = 1 - t
+  const x = u * u * u * from.x + 3 * u * u * t * from.x + 3 * u * t * t * to.x + t * t * t * to.x
+  const y = u * u * u * from.y + 3 * u * u * t * midY + 3 * u * t * t * midY + t * t * t * to.y
+  return { x, y }
+}
+
+const TRAVEL_STORAGE_KEY = 'tq-journey-last-completed-count'
+
 export default function JourneyMap({
   questDays,
   completedDayIds,
   todayDayNumber,
   onDayClick,
 }: JourneyMapProps) {
+  const { profile } = useAuth()
   const todayRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const hasAnimated = useRef(false)
   const totalHeight = PADDING_TOP + (questDays.length - 1) * NODE_GAP_Y + PADDING_BOTTOM
 
   const pathD = useMemo(() => buildPath(questDays.length), [questDays.length])
   const sparkles = useMemo(() => getSparkles(questDays.length), [questDays.length])
+
+  // Travel animation state
+  const [travelPos, setTravelPos] = useState<{ x: number; y: number } | null>(null)
+  const [showBurst, setShowBurst] = useState<number | null>(null) // index of burst node
 
   // Find where completed path ends (for gradient split)
   const lastCompletedIndex = useMemo(() => {
@@ -97,6 +120,73 @@ export default function JourneyMap({
   const completedFraction = questDays.length > 1
     ? (lastCompletedIndex + 1) / questDays.length
     : 0
+
+  // Travel animation: detect new completion and animate avatar along path
+  useEffect(() => {
+    if (hasAnimated.current || lastCompletedIndex < 1) return
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion) return
+
+    const storedCount = parseInt(sessionStorage.getItem(TRAVEL_STORAGE_KEY) || '0', 10)
+    const currentCount = completedDayIds.size
+
+    if (currentCount <= storedCount) {
+      // No new completion — just update stored count
+      sessionStorage.setItem(TRAVEL_STORAGE_KEY, String(currentCount))
+      return
+    }
+
+    hasAnimated.current = true
+    sessionStorage.setItem(TRAVEL_STORAGE_KEY, String(currentCount))
+
+    const fromIdx = lastCompletedIndex - 1
+    const toIdx = lastCompletedIndex
+
+    // Scroll destination into view first
+    const destPos = getNodeCenter(toIdx)
+    const destEl = containerRef.current?.parentElement
+    if (destEl) {
+      const scrollTarget = destPos.y - window.innerHeight / 2
+      destEl.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'smooth' })
+    }
+
+    // Animate avatar along the path over 1.2 seconds
+    const duration = 1200
+    let start: number | null = null
+    let rafId: number
+
+    function step(timestamp: number) {
+      if (start === null) start = timestamp
+      const elapsed = timestamp - start
+      const rawT = Math.min(elapsed / duration, 1)
+      // Ease-out with slight overshoot (spring-like)
+      const t = rawT < 1
+        ? 1 - Math.pow(1 - rawT, 3) + (rawT > 0.8 ? Math.sin((rawT - 0.8) * Math.PI * 5) * 0.03 : 0)
+        : 1
+
+      const pos = interpolateNodes(fromIdx, toIdx, Math.min(t, 1))
+      setTravelPos(pos)
+
+      if (rawT < 1) {
+        rafId = requestAnimationFrame(step)
+      } else {
+        // Arrived — show burst, then clean up
+        setShowBurst(toIdx)
+        setTimeout(() => {
+          setTravelPos(null)
+          setShowBurst(null)
+        }, 800)
+      }
+    }
+
+    // Start after a brief delay to let scroll complete
+    setTimeout(() => {
+      rafId = requestAnimationFrame(step)
+    }, 400)
+
+    return () => cancelAnimationFrame(rafId)
+  }, [lastCompletedIndex, completedDayIds.size])
 
   useEffect(() => {
     setTimeout(() => {
@@ -115,7 +205,7 @@ export default function JourneyMap({
       />
 
       {/* Container with fixed aspect */}
-      <div className="relative mx-auto" style={{ width: MAP_WIDTH, height: totalHeight }}>
+      <div ref={containerRef} className="relative mx-auto" style={{ width: MAP_WIDTH, height: totalHeight }}>
 
         {/* SVG layer: path + sparkles */}
         <svg
@@ -341,6 +431,60 @@ export default function JourneyMap({
             </div>
           )
         })}
+
+        {/* Traveling avatar during animation */}
+        {travelPos && profile && (
+          <div
+            className="absolute z-20 pointer-events-none"
+            style={{
+              left: travelPos.x - 20,
+              top: travelPos.y - 20,
+              width: 40,
+              height: 40,
+              transition: 'none',
+            }}
+          >
+            <div className="w-10 h-10 rounded-full ring-2 ring-tq-teal shadow-lg shadow-tq-teal/40 overflow-hidden">
+              <Avatar profile={profile} size="sm" className="!w-10 !h-10" />
+            </div>
+            {/* Glow trail */}
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'radial-gradient(circle, rgba(0,201,167,0.3) 0%, transparent 70%)',
+                transform: 'scale(2)',
+              }}
+            />
+          </div>
+        )}
+
+        {/* Burst effect on arrival */}
+        {showBurst !== null && (() => {
+          const burstPos = getNodeCenter(showBurst)
+          return (
+            <div
+              className="absolute z-10 pointer-events-none"
+              style={{ left: burstPos.x - 30, top: burstPos.y - 30, width: 60, height: 60 }}
+            >
+              {/* Expanding ring */}
+              <div className="absolute inset-0 rounded-full border-2 border-tq-teal animate-ring-burst" />
+              {/* Particle dots */}
+              {[0, 45, 90, 135, 180, 225, 270, 315].map(angle => (
+                <div
+                  key={angle}
+                  className="absolute w-1.5 h-1.5 rounded-full bg-tq-teal"
+                  style={{
+                    left: '50%',
+                    top: '50%',
+                    transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-24px)`,
+                    opacity: 0,
+                    animation: 'ring-burst 600ms ease-out forwards',
+                  }}
+                />
+              ))}
+            </div>
+          )
+        })()}
 
         {/* Finish flag at the bottom */}
         <div

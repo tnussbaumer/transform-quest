@@ -8,6 +8,8 @@ import { useFriends } from '../hooks/useFriends'
 import { useStreakFreeze } from '../hooks/useStreakFreeze'
 import { hasUnlock } from '../lib/cosmeticUnlocks'
 import { supabase } from '../lib/supabase'
+import { Avatar } from '../components/profile/Avatar'
+import { AvatarLightbox } from '../components/ui/AvatarLightbox'
 import { TodaysReadingCard } from '../components/home/TodaysReadingCard'
 import { WeeklyStreakBar } from '../components/home/WeeklyStreakBar'
 import { QuickStatsRow } from '../components/home/QuickStatsRow'
@@ -35,6 +37,7 @@ export function HomePage() {
   const showAnimatedFlame = profile ? hasUnlock(profile, 'animated_flame') : false
 
   const [completedTodayIds, setCompletedTodayIds] = useState<Set<string>>(new Set())
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   // Fetch who completed today's quest day (for friend activity snippet)
   useEffect(() => {
@@ -51,25 +54,38 @@ export function HomePage() {
   const loading = questLoading
 
   return (
-    <div className="px-4 py-6 space-y-6">
-      {/* Header with subtle gradient */}
+    <div className="px-4 pb-6 space-y-6">
+      {/* Header with subtle gradient + safe area padding for notch */}
       <header
-        className="flex items-center justify-between animate-fade-up"
+        className="flex items-center justify-between animate-fade-up pt-safe"
         style={{
           background: 'linear-gradient(180deg, rgba(139,92,246,0.06) 0%, transparent 100%)',
-          margin: '-24px -16px 0',
-          padding: '24px 16px 0',
+          margin: '0 -16px 0',
+          padding: '16px 16px 0',
+          paddingTop: 'max(16px, env(safe-area-inset-top, 16px))',
           borderRadius: '0 0 24px 24px',
         }}
       >
-        <div>
-          <h1 className="text-2xl font-extrabold text-tq-text leading-tight">
-            Hey {displayName}!
-          </h1>
-          <p className="text-tq-text-sec text-sm font-semibold">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-          </p>
+        {/* Avatar + greeting */}
+        <div className="flex items-center gap-3">
+          {profile && (
+            <Avatar
+              profile={profile}
+              size="md"
+              onTap={() => setLightboxOpen(true)}
+            />
+          )}
+          <div>
+            <h1 className="text-xl font-extrabold text-tq-text leading-tight">
+              Hey {displayName}!
+            </h1>
+            <p className="text-tq-text-sec text-xs font-semibold">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
         </div>
+
+        {/* Right side: admin + streak */}
         <div className="flex items-center gap-2">
           {isAdmin && (
             <button
@@ -90,6 +106,14 @@ export function HomePage() {
           </div>
         </div>
       </header>
+
+      {/* Avatar Lightbox */}
+      {profile && (
+        <AvatarLightbox
+          user={lightboxOpen ? { ...profile, level_title: profile.level_title } : null}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
 
       {/* Streak Freeze Modal */}
       {needsFreeze && (
