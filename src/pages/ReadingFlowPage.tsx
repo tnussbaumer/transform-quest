@@ -90,9 +90,11 @@ export function ReadingFlowPage() {
       setResult(res)
       setNewBadges(res.new_badges ?? [])
       setStep(STEP_CELEBRATE)
-    } catch (err) {
-      console.error('complete_reading RPC failed:', err)
-      const message = err instanceof Error ? err.message : 'Something went wrong saving your reading.'
+    } catch (err: unknown) {
+      console.error('complete_reading RPC failed:', JSON.stringify(err), err)
+      // Supabase PostgrestError has .message but isn't instanceof Error
+      const pgErr = err as { message?: string; details?: string; code?: string } | null
+      const message = pgErr?.message || (err instanceof Error ? err.message : 'Something went wrong saving your reading.')
       setSubmitError(message)
     }
   }

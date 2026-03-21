@@ -70,7 +70,7 @@ BEGIN
       'new_streak',       v_profile.current_streak,
       'new_xp',           v_profile.total_xp,
       'new_level',        v_profile.level_title,
-      'new_badges',       '[]'::jsonb,
+      'new_badges',       json_build_array(),
       'xp_earned',        0,
       'milestone_bonus',  0,
       'quest_complete',   false,
