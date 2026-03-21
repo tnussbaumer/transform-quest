@@ -12,9 +12,29 @@ interface FriendCardProps {
   completedToday: boolean
 }
 
-export function FriendCard({ friendship, hasNudgedToday, onNudge, nudging = false, completedToday }: FriendCardProps) {
+export function FriendCard({ friendship, hasNudgedToday, onNudge, completedToday }: FriendCardProps) {
   const { friend, mutual_streak } = friendship
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [localNudging, setLocalNudging] = useState(false)
+  const [localNudged, setLocalNudged] = useState(false)
+
+  const showNudged = hasNudgedToday || localNudged
+  const isDisabled = showNudged || localNudging
+
+  async function handleNudge() {
+    if (isDisabled) return
+    setLocalNudging(true)
+    try {
+      onNudge()
+      // Optimistic: show nudged immediately
+      setLocalNudged(true)
+    } catch {
+      // If nudge fails, revert
+      setLocalNudged(false)
+    } finally {
+      setLocalNudging(false)
+    }
+  }
 
   return (
     <div className="flex items-center gap-3 py-3 px-1">
@@ -47,20 +67,20 @@ export function FriendCard({ friendship, hasNudgedToday, onNudge, nudging = fals
 
       {!completedToday && (
         <button
-          onClick={onNudge}
-          disabled={hasNudgedToday || nudging}
+          onClick={handleNudge}
+          disabled={isDisabled}
           className={[
             'flex-shrink-0 flex items-center gap-1.5',
             'px-3 h-9 rounded-lg text-xs font-bold',
             'border-l-4 border-tq-teal bg-tq-surface-2',
             'transition-all duration-200',
-            hasNudgedToday || nudging
+            isDisabled
               ? 'text-tq-text-muted cursor-not-allowed opacity-60'
               : 'text-tq-teal hover:bg-tq-surface',
           ].join(' ')}
-          aria-label={hasNudgedToday ? 'Already nudged today' : `Nudge ${friend.display_name}`}
+          aria-label={showNudged ? 'Already nudged today' : `Nudge ${friend.display_name}`}
         >
-          {hasNudgedToday ? '✓ Nudged' : '👋 Nudge'}
+          {localNudging ? '...' : showNudged ? '✓ Nudged' : '👋 Nudge'}
         </button>
       )}
 
