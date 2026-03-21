@@ -178,6 +178,22 @@ export interface CreateWallPostResult {
   xp_earned: number
 }
 
+export interface JournalEntry {
+  id: string
+  answer_1: string
+  answer_2: string
+  answer_3: string
+  xp_earned: number
+  completed_at: string
+  quest_days: {
+    passage_reference: string | null
+    day_number: number
+    quests: {
+      title: string
+    }
+  }
+}
+
 // Supabase Database type for typed client (v2 format)
 export interface Database {
   public: {

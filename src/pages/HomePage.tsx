@@ -20,6 +20,7 @@ import { InstallBanner } from '../components/home/InstallBanner'
 import { AnimatedFlame } from '../components/ui/AnimatedFlame'
 import { XPProgressBar } from '../components/ui/XPProgressBar'
 import { BibleReadingGuide } from '../components/reading/BibleReadingGuide'
+import { getStreakEncouragement } from '../lib/streakEncouragement'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 
@@ -36,6 +37,10 @@ export function HomePage() {
   const streak = fullProfile?.current_streak ?? profile?.current_streak ?? 0
   const totalXp = fullProfile?.total_xp ?? profile?.total_xp ?? 0
   const showAnimatedFlame = profile ? hasUnlock(profile, 'animated_flame') : false
+  const longestStreak = fullProfile?.longest_streak ?? profile?.longest_streak ?? 0
+
+  // Show encouragement when streak is 0 and user had a previous streak
+  const showStreakEncouragement = streak === 0 && longestStreak > 0 && !isCurrentDayCompleted
 
   const [completedTodayIds, setCompletedTodayIds] = useState<Set<string>>(new Set())
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -191,6 +196,20 @@ export function HomePage() {
               </p>
             </div>
           </Card>
+        </div>
+      )}
+
+      {/* Streak recovery encouragement */}
+      {showStreakEncouragement && (
+        <div className="animate-fade-up" style={{ animationDelay: '80ms' }}>
+          <div className="bg-tq-surface rounded-xl p-3 border-l-4 border-tq-teal flex items-start gap-3">
+            <span className="text-lg flex-shrink-0 mt-0.5">💪</span>
+            <div>
+              <p className="text-sm text-tq-text leading-relaxed">
+                {getStreakEncouragement(longestStreak, completions.length)}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

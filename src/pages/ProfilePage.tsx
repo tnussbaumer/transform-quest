@@ -14,6 +14,8 @@ import { Button } from '../components/ui/Button'
 import { XPProgressBar } from '../components/ui/XPProgressBar'
 import { AvatarLightbox } from '../components/ui/AvatarLightbox'
 import { BibleReadingGuide } from '../components/reading/BibleReadingGuide'
+import { JournalSection } from '../components/profile/JournalSection'
+import { useJournal } from '../hooks/useJournal'
 import {
   isPushSupported,
   getNotificationPermission,
@@ -26,6 +28,7 @@ export function ProfilePage() {
   const { signOut, patchProfile } = useAuth()
   const { profile, completions, loading, refetch } = useProfile()
   const { allBadges, earnedBadges } = useBadges()
+  const { entries: journalEntries, loading: journalLoading } = useJournal()
   const [editingAvatar, setEditingAvatar] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
@@ -180,8 +183,13 @@ export function ProfilePage() {
         </Card>
       </section>
 
+      {/* My Journal */}
+      <div className="animate-fade-up" style={{ animationDelay: '250ms' }}>
+        <JournalSection entries={journalEntries} loading={journalLoading} />
+      </div>
+
       {/* Streak Calendar */}
-      <section aria-label="Streak calendar" className="animate-fade-up" style={{ animationDelay: '300ms' }}>
+      <section aria-label="Streak calendar" className="animate-fade-up" style={{ animationDelay: '350ms' }}>
         <Card>
           <h2 className="text-xs font-bold uppercase tracking-widest text-tq-text-muted mb-4">
             Streak Calendar
