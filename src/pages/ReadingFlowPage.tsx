@@ -39,6 +39,7 @@ export function ReadingFlowPage() {
   const [step, setStep] = useState(STEP_PASSAGE)
   const [questDay, setQuestDay] = useState<QuestDay | null>(null)
   const [questType, setQuestType] = useState<'reading' | 'discipline' | 'event'>('reading')
+  const [hintsEnabled, setHintsEnabled] = useState(true)
   const [loadingDay, setLoadingDay] = useState(true)
   const [answers, setAnswers] = useState({ a1: '', a2: '', a3: '' })
   const [result, setResult] = useState<CompleteReadingResult | null>(null)
@@ -59,10 +60,14 @@ export function ReadingFlowPage() {
         if (qd) {
           const { data: quest } = await supabase
             .from('quests')
-            .select('quest_type')
+            .select('quest_type, hints_enabled')
             .eq('id', qd.quest_id)
             .single()
-          if (quest) setQuestType((quest as { quest_type: string }).quest_type as 'reading' | 'discipline' | 'event')
+          if (quest) {
+            const q = quest as { quest_type: string; hints_enabled: boolean }
+            setQuestType(q.quest_type as 'reading' | 'discipline' | 'event')
+            setHintsEnabled(q.hints_enabled ?? true)
+          }
         }
         setLoadingDay(false)
       })
@@ -129,6 +134,7 @@ export function ReadingFlowPage() {
         <PassageStep
           questDay={questDay}
           questType={questType}
+          hintsEnabled={hintsEnabled}
           onContinue={() => setStep(STEP_Q1)}
         />
       )}

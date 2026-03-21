@@ -8,6 +8,7 @@ import type { QuestDay } from '../../types/database'
 interface PassageStepProps {
   questDay: QuestDay
   questType?: 'reading' | 'discipline' | 'event'
+  hintsEnabled?: boolean
   onContinue: () => void
 }
 
@@ -20,14 +21,13 @@ const ENCOURAGEMENTS = [
   "God's Word is powerful. Grab your Bible and dive in!",
 ]
 
-export function PassageStep({ questDay, questType, onContinue }: PassageStepProps) {
+export function PassageStep({ questDay, questType, hintsEnabled = true, onContinue }: PassageStepProps) {
   const isDiscipline = questType === 'discipline' || questType === 'event'
   const navigate = useNavigate()
   const [hintExpanded, setHintExpanded] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
 
-  const hasHint = !!questDay.reading_hint?.trim()
-  console.log('[PassageStep] reading_hint:', questDay.reading_hint, 'hasHint:', hasHint)
+  const hasHint = hintsEnabled && !!questDay.reading_hint?.trim()
 
   const encouragement = useMemo(
     () => ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)],

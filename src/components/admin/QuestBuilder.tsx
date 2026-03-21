@@ -18,6 +18,7 @@ interface QuestFormData {
   start_date: string
   end_date: string
   is_active: boolean
+  hints_enabled: boolean
   badge_name: string
   badge_icon: string
 }
@@ -41,6 +42,7 @@ const emptyForm: QuestFormData = {
   start_date: '',
   end_date: '',
   is_active: true,
+  hints_enabled: true,
   badge_name: '',
   badge_icon: '',
 }
@@ -134,6 +136,7 @@ export function QuestBuilder() {
       start_date: quest.start_date,
       end_date: quest.end_date,
       is_active: quest.is_active,
+      hints_enabled: quest.hints_enabled ?? true,
       badge_name: quest.badge_name ?? '',
       badge_icon: quest.badge_icon ?? '',
     })
@@ -179,6 +182,7 @@ export function QuestBuilder() {
       start_date: form.start_date,
       end_date: form.end_date,
       is_active: form.is_active,
+      hints_enabled: form.hints_enabled,
       badge_name: form.badge_name.trim() || null,
       badge_icon: form.badge_icon.trim() || null,
     }
@@ -409,6 +413,37 @@ export function QuestBuilder() {
             >
               {form.is_active ? 'Active' : 'Inactive'}
             </button>
+          </div>
+
+          {/* Reading Hints toggle */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-semibold text-tq-text-sec">Reading Hints</label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => updateForm('hints_enabled', !form.hints_enabled)}
+                className={[
+                  'relative w-12 h-7 rounded-full transition-colors duration-200',
+                  form.hints_enabled ? 'bg-tq-teal' : 'bg-tq-surface-2',
+                ].join(' ')}
+                role="switch"
+                aria-checked={form.hints_enabled}
+                aria-label="Toggle reading hints"
+              >
+                <span
+                  className={[
+                    'absolute top-1 w-5 h-5 rounded-full bg-white transition-transform duration-200',
+                    form.hints_enabled ? 'translate-x-6' : 'translate-x-1',
+                  ].join(' ')}
+                />
+              </button>
+              <span className="text-sm text-tq-text-sec">
+                {form.hints_enabled ? 'Hints visible to students' : 'Hints hidden from students'}
+              </span>
+            </div>
+            <p className="text-xs text-tq-text-muted">
+              When enabled, students see passage-specific reading hints. You can still write hints per day even when disabled.
+            </p>
           </div>
 
           {/* Badge fields */}
