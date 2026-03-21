@@ -107,6 +107,7 @@ export default function JourneyMap({
   const [travelPos, setTravelPos] = useState<{ x: number; y: number } | null>(null)
   const [travelTrail, setTravelTrail] = useState<{ x: number; y: number; id: number }[]>([])
   const [showBurst, setShowBurst] = useState<number | null>(null) // index of burst node
+  const [avatarRestIndex, setAvatarRestIndex] = useState<number | null>(null) // node where avatar rests after travel
   const trailIdRef = useRef(0)
 
   // Find where completed path ends (for gradient split)
@@ -134,8 +135,11 @@ export default function JourneyMap({
     const currentCount = completedDayIds.size
 
     if (currentCount <= storedCount) {
-      // No new completion — just update stored count
+      // No new completion — show avatar resting on last completed node
       sessionStorage.setItem(TRAVEL_STORAGE_KEY, String(currentCount))
+      if (lastCompletedIndex >= 0) {
+        setAvatarRestIndex(lastCompletedIndex)
+      }
       return
     }
 
@@ -182,12 +186,13 @@ export default function JourneyMap({
       if (rawT < 1) {
         rafId = requestAnimationFrame(step)
       } else {
-        // Arrived — show burst, then clean up
+        // Arrived — show burst, keep avatar on the destination node
         setShowBurst(toIdx)
         setTimeout(() => {
           setTravelPos(null)
           setTravelTrail([])
           setShowBurst(null)
+          setAvatarRestIndex(toIdx) // avatar stays on the completed node
         }, 800)
       }
     }
@@ -444,7 +449,7 @@ export default function JourneyMap({
           )
         })}
 
-        {/* Trail sparks behind traveling avatar */}
+        {/* Golden trail sparks behind traveling avatar */}
         {travelTrail.map((spark, i) => {
           const age = (travelTrail.length - i) / travelTrail.length
           return (
@@ -452,16 +457,13 @@ export default function JourneyMap({
               key={spark.id}
               className="absolute pointer-events-none rounded-full"
               style={{
-                left: spark.x - 3,
-                top: spark.y - 3,
-                width: 6,
-                height: 6,
-                background: age > 0.5
-                  ? `rgba(0, 201, 167, ${0.7 * (1 - age)})`
-                  : `rgba(255, 184, 48, ${0.7 * (1 - age)})`,
-                boxShadow: `0 0 ${4 + age * 4}px ${age > 0.5 ? 'rgba(0,201,167,0.4)' : 'rgba(255,184,48,0.4)'}`,
-                transform: `scale(${1 - age * 0.5})`,
-                transition: 'opacity 300ms',
+                left: spark.x - 5,
+                top: spark.y - 5,
+                width: 10,
+                height: 10,
+                background: `rgba(255, 184, 48, ${0.8 * (1 - age)})`,
+                boxShadow: `0 0 ${8 + age * 8}px rgba(255, 184, 48, ${0.6 * (1 - age)})`,
+                transform: `scale(${1 - age * 0.4})`,
               }}
             />
           )
@@ -479,15 +481,15 @@ export default function JourneyMap({
               transition: 'none',
             }}
           >
-            <div className="w-10 h-10 rounded-full ring-2 ring-tq-teal shadow-lg shadow-tq-teal/40 overflow-hidden">
+            <div className="w-10 h-10 rounded-full ring-2 ring-tq-gold shadow-lg shadow-tq-gold/50 overflow-hidden">
               <Avatar profile={profile} size="sm" className="!w-10 !h-10" />
             </div>
-            {/* Glow trail */}
+            {/* Golden glow */}
             <div
               className="absolute inset-0 rounded-full"
               style={{
-                background: 'radial-gradient(circle, rgba(0,201,167,0.3) 0%, transparent 70%)',
-                transform: 'scale(2)',
+                background: 'radial-gradient(circle, rgba(255,184,48,0.35) 0%, transparent 70%)',
+                transform: 'scale(2.5)',
               }}
             />
           </div>
@@ -520,6 +522,23 @@ export default function JourneyMap({
             </div>
           )
         })()}
+
+        {/* Avatar resting on last completed node */}
+        {avatarRestIndex !== null && !travelPos && profile && (
+          <div
+            className="absolute z-10 pointer-events-none"
+            style={{
+              left: getNodeCenter(avatarRestIndex).x - 16,
+              top: getNodeCenter(avatarRestIndex).y - 28,
+              width: 32,
+              height: 32,
+            }}
+          >
+            <div className="w-8 h-8 rounded-full ring-2 ring-tq-gold shadow-md shadow-tq-gold/30 overflow-hidden">
+              <Avatar profile={profile} size="sm" className="!w-8 !h-8" />
+            </div>
+          </div>
+        )}
 
         {/* Finish flag at the bottom */}
         <div
