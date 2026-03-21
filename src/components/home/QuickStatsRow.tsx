@@ -1,4 +1,5 @@
 import { Flame, Zap, BookOpen } from 'lucide-react'
+import { useCountUp } from '../../hooks/useCountUp'
 import { formatXp } from '../../lib/levelUtils'
 
 interface QuickStatsRowProps {
@@ -8,27 +9,25 @@ interface QuickStatsRowProps {
   totalDays: number
 }
 
-interface StatItem {
-  icon: React.ReactNode
-  value: string
-  label: string
-}
-
 export function QuickStatsRow({ streak, totalXp, dayNumber, totalDays }: QuickStatsRowProps) {
-  const stats: StatItem[] = [
+  const animStreak = useCountUp(streak)
+  const animXp = useCountUp(totalXp)
+  const animDay = useCountUp(dayNumber)
+
+  const stats = [
     {
-      icon: <Flame size={20} className="text-tq-gold" />,
-      value: String(streak),
+      icon: <Flame size={20} className={`text-tq-gold ${streak > 0 ? 'animate-fire-pulse' : ''}`} />,
+      value: String(animStreak),
       label: 'day streak',
     },
     {
       icon: <Zap size={20} className="text-tq-gold" />,
-      value: formatXp(totalXp),
+      value: formatXp(animXp),
       label: 'total XP',
     },
     {
       icon: <BookOpen size={20} className="text-tq-teal" />,
-      value: `${dayNumber}/${totalDays}`,
+      value: `${animDay}/${totalDays}`,
       label: 'quest days',
     },
   ]

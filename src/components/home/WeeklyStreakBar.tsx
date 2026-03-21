@@ -12,7 +12,6 @@ export function WeeklyStreakBar({ completions }: WeeklyStreakBarProps) {
   const weekDays = getCurrentWeekDays()
   const todayStr = toLocalDateString()
 
-  // Build a Set of completed date strings for O(1) lookup
   const completedDates = new Set(
     completions.map(c => toLocalDateString(new Date(c.completed_at)))
   )
@@ -32,15 +31,14 @@ export function WeeklyStreakBar({ completions }: WeeklyStreakBarProps) {
 
           return (
             <div key={dateStr} className="flex flex-col items-center gap-1">
-              {/* Day label */}
               <span className="text-xs font-semibold text-tq-text-muted">
                 {DAY_LABELS[index]}
               </span>
 
-              {/* Circle */}
               <div
                 className={[
                   'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200',
+                  'animate-dot-pop',
                   isDone && isToday
                     ? 'bg-tq-teal ring-2 ring-tq-teal ring-offset-2 ring-offset-tq-bg'
                     : isDone
@@ -53,6 +51,7 @@ export function WeeklyStreakBar({ completions }: WeeklyStreakBarProps) {
                 ]
                   .filter(Boolean)
                   .join(' ')}
+                style={{ animationDelay: `${index * 60}ms` }}
                 aria-label={`${day.toLocaleDateString('en-US', { weekday: 'long' })} — ${isDone ? 'completed' : isToday ? 'today' : 'not completed'}`}
               >
                 {isDone && (

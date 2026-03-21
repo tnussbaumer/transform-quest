@@ -11,6 +11,8 @@ import { BadgesGrid } from '../components/profile/BadgesGrid'
 import { AvatarPicker } from '../components/profile/AvatarPicker'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
+import { XPProgressBar } from '../components/ui/XPProgressBar'
+import { AvatarLightbox } from '../components/ui/AvatarLightbox'
 import {
   isPushSupported,
   getNotificationPermission,
@@ -24,6 +26,7 @@ export function ProfilePage() {
   const { profile, completions, loading, refetch } = useProfile()
   const { allBadges, earnedBadges } = useBadges()
   const [editingAvatar, setEditingAvatar] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   // Notification settings state
   const [notifEnabled, setNotifEnabled] = useState(false)
@@ -109,8 +112,13 @@ export function ProfilePage() {
     <div className="px-4 py-6 space-y-6">
       {/* Profile Header */}
       <div className="animate-fade-up">
-        <ProfileHeader profile={profile} />
+        <ProfileHeader profile={profile} onAvatarTap={() => setLightboxOpen(true)} />
       </div>
+
+      <AvatarLightbox
+        user={lightboxOpen ? { ...profile, level_title: profile.level_title } : null}
+        onClose={() => setLightboxOpen(false)}
+      />
 
       {/* Edit Avatar button */}
       <div className="flex justify-center -mt-4 animate-fade-up" style={{ animationDelay: '50ms' }}>
@@ -121,6 +129,13 @@ export function ProfilePage() {
           <Pencil size={12} />
           {editingAvatar ? 'Close' : 'Edit Avatar'}
         </button>
+      </div>
+
+      {/* XP Progress Bar */}
+      <div className="animate-fade-up -mt-2" style={{ animationDelay: '75ms' }}>
+        <Card>
+          <XPProgressBar totalXp={profile.total_xp} />
+        </Card>
       </div>
 
       {editingAvatar && (

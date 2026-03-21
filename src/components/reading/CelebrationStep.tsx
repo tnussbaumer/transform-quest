@@ -3,6 +3,7 @@ import { Flame } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import { Button } from '../ui/Button'
 import { ShareButton } from './ShareButton'
+import { BadgeRevealCard } from '../celebration/BadgeRevealCard'
 import type { QuestDay, NewBadge } from '../../types/database'
 
 interface CelebrationStepProps {
@@ -130,20 +131,17 @@ export function CelebrationStep({
           </div>
         </div>
 
-        {/* New badges earned */}
+        {/* New badges earned — card flip reveal */}
         {newBadges.length > 0 && (
           <div className="bg-tq-surface rounded-2xl px-4 py-4 border border-tq-purple/40 space-y-3">
             <p className="text-tq-purple font-extrabold text-sm">🏆 New Badge{newBadges.length > 1 ? 's' : ''} Earned!</p>
             <div className="flex justify-center gap-3 flex-wrap">
-              {newBadges.map(b => (
-                <div key={b.id} className="flex flex-col items-center gap-1">
-                  <div className="w-12 h-12 rounded-full bg-tq-surface-2 ring-2 ring-tq-purple flex items-center justify-center">
-                    <span className="text-xl">{b.icon ?? '🏅'}</span>
-                  </div>
-                  <span className="text-tq-text-sec text-xs font-semibold max-w-[56px] text-center leading-tight">
-                    {b.name}
-                  </span>
-                </div>
+              {newBadges.map((b, i) => (
+                <BadgeRevealCard
+                  key={b.id}
+                  badge={b}
+                  delay={800 + i * 400}
+                />
               ))}
             </div>
           </div>
