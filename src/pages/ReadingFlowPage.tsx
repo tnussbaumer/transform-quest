@@ -9,6 +9,7 @@ import { ProgressDots } from '../components/reading/ProgressDots'
 import { PassageStep } from '../components/reading/PassageStep'
 import { QuestionStep } from '../components/reading/QuestionStep'
 import { CelebrationStep } from '../components/reading/CelebrationStep'
+import { JourneyAnimationStep } from '../components/reading/JourneyAnimationStep'
 import { FriendStreaksStep } from '../components/reading/FriendStreaksStep'
 import { ShareStep } from '../components/reading/ShareStep'
 import { ShareButton } from '../components/reading/ShareButton'
@@ -20,9 +21,10 @@ const STEP_Q1         = 2
 const STEP_Q2         = 3
 const STEP_Q3         = 4
 const STEP_CELEBRATE  = 5
-const STEP_SHARE      = 6
-const STEP_FRIENDS    = 7
-const STEP_DONE       = 8
+const STEP_JOURNEY    = 6
+const STEP_SHARE      = 7
+const STEP_FRIENDS    = 8
+const STEP_DONE       = 9
 
 export function ReadingFlowPage() {
   const { questDayId } = useParams<{ questDayId: string }>()
@@ -100,7 +102,7 @@ export function ReadingFlowPage() {
   }
 
   function handleCelebrationContinue() {
-    setStep(STEP_SHARE)
+    setStep(STEP_JOURNEY)
   }
 
   function handleShareContinue() {
@@ -187,6 +189,15 @@ export function ReadingFlowPage() {
         />
       )}
 
+      {step === STEP_JOURNEY && profile && (
+        <JourneyAnimationStep
+          profile={profile}
+          fromDayNumber={Math.max(1, dayNumber - 1)}
+          toDayNumber={dayNumber}
+          onComplete={() => setStep(STEP_SHARE)}
+        />
+      )}
+
       {step === STEP_SHARE && (
         <ShareStep
           questDayId={questDayId}
@@ -224,15 +235,9 @@ export function ReadingFlowPage() {
                 streakCount={celebrationStreak}
                 fullWidth
               />
-              <Button fullWidth onClick={() => navigate('/quests?showJourney=1', { replace: true })}>
-                See Your Journey
-              </Button>
-              <button
-                onClick={() => navigate('/', { replace: true })}
-                className="w-full text-center text-tq-text-muted text-sm font-semibold py-2"
-              >
+              <Button fullWidth onClick={() => navigate('/', { replace: true })}>
                 Back to Home
-              </button>
+              </Button>
             </div>
           </div>
         </div>
