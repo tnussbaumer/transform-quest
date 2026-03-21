@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Flame, Check } from 'lucide-react'
 import { Avatar } from '../profile/Avatar'
+import { AvatarLightbox } from '../ui/AvatarLightbox'
 import type { FriendWithProfile } from '../../types/database'
 
 interface FriendCardProps {
@@ -12,10 +14,15 @@ interface FriendCardProps {
 
 export function FriendCard({ friendship, hasNudgedToday, onNudge, nudging = false, completedToday }: FriendCardProps) {
   const { friend, mutual_streak } = friendship
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   return (
     <div className="flex items-center gap-3 py-3 px-1">
-      <Avatar profile={friend} size="sm" />
+      <Avatar
+        profile={friend}
+        size="sm"
+        onTap={() => setLightboxOpen(true)}
+      />
 
       <div className="flex-1 min-w-0">
         <p className="font-bold text-tq-text text-sm truncate">{friend.display_name}</p>
@@ -56,6 +63,11 @@ export function FriendCard({ friendship, hasNudgedToday, onNudge, nudging = fals
           {hasNudgedToday ? '✓ Nudged' : '👋 Nudge'}
         </button>
       )}
+
+      <AvatarLightbox
+        user={lightboxOpen ? { ...friend, level_title: friend.level_title } : null}
+        onClose={() => setLightboxOpen(false)}
+      />
     </div>
   )
 }

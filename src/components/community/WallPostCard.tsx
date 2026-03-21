@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Trash2, Lock, Globe } from 'lucide-react'
 import { Avatar } from '../profile/Avatar'
+import { AvatarLightbox } from '../ui/AvatarLightbox'
 import { Card } from '../ui/Card'
 import type { WallPost } from '../../types/database'
 
@@ -38,6 +39,7 @@ export function WallPostCard({ post, onToggleReaction, onDelete, index }: WallPo
   const [reactionBusy, setReactionBusy] = useState(false)
   const [bouncingReaction, setBouncingReaction] = useState<string | null>(null)
   const [floatingReaction, setFloatingReaction] = useState<string | null>(null)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   function handleReaction(postId: string, type: string) {
     if (reactionBusy) return
@@ -77,7 +79,7 @@ export function WallPostCard({ post, onToggleReaction, onDelete, index }: WallPo
       <Card>
         {/* Header */}
         <div className="flex items-center gap-3 mb-3">
-          <Avatar profile={authorProfile} size="sm" />
+          <Avatar profile={authorProfile} size="sm" onTap={() => setLightboxOpen(true)} />
           <div className="flex-1 min-w-0">
             <p className="font-bold text-tq-text text-sm truncate">{post.author_name}</p>
           </div>
@@ -177,6 +179,16 @@ export function WallPostCard({ post, onToggleReaction, onDelete, index }: WallPo
           })}
         </div>
       </Card>
+
+      <AvatarLightbox
+        user={lightboxOpen ? {
+          display_name: post.author_name,
+          avatar_type: post.author_avatar_type as 'preset' | 'custom',
+          avatar_preset: post.author_avatar_preset,
+          avatar_url: post.author_avatar_url,
+        } : null}
+        onClose={() => setLightboxOpen(false)}
+      />
     </div>
   )
 }
