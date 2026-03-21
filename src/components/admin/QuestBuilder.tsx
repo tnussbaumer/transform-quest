@@ -262,20 +262,41 @@ export function QuestBuilder() {
     setError(null)
     setSuccessMsg(null)
 
-    const payload = days.map((d) => ({
-      ...(d.id ? { id: d.id } : {}),
-      quest_id: selectedQuest.id,
-      day_number: d.day_number,
-      passage_reference: d.passage_reference.trim() || null,
-      passage_text: d.passage_text.trim() || null,
-      reading_hint: d.reading_hint.trim() || null,
-      is_milestone: d.is_milestone,
-      milestone_note: d.is_milestone ? d.milestone_note.trim() || null : null,
-    }))
+    // Split into updates (existing rows with id) and inserts (new rows without id)
+    const existing = days.filter(d => d.id)
+    const newRows = days.filter(d => !d.id)
 
-    const { error: err } = await supabase
-      .from('quest_days')
-      .upsert(payload, { onConflict: 'quest_id,day_number' })
+    let err: { message: string } | null = null
+
+    // Update existing rows one by one
+    for (const d of existing) {
+      const { error: updateErr } = await supabase
+        .from('quest_days')
+        .update({
+          passage_reference: d.passage_reference.trim() || null,
+          passage_text: d.passage_text.trim() || null,
+          reading_hint: d.reading_hint.trim() || null,
+          is_milestone: d.is_milestone,
+          milestone_note: d.is_milestone ? d.milestone_note.trim() || null : null,
+        })
+        .eq('id', d.id!)
+      if (updateErr) { err = updateErr; break }
+    }
+
+    // Insert new rows
+    if (!err && newRows.length > 0) {
+      const insertPayload = newRows.map(d => ({
+        quest_id: selectedQuest.id,
+        day_number: d.day_number,
+        passage_reference: d.passage_reference.trim() || null,
+        passage_text: d.passage_text.trim() || null,
+        reading_hint: d.reading_hint.trim() || null,
+        is_milestone: d.is_milestone,
+        milestone_note: d.is_milestone ? d.milestone_note.trim() || null : null,
+      }))
+      const { error: insertErr } = await supabase.from('quest_days').insert(insertPayload)
+      if (insertErr) err = insertErr
+    }
 
     if (err) {
       setError(err.message)

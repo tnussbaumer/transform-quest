@@ -257,6 +257,6 @@ WHEN 79 THEN 'Some people try to use Jesus'' name like a magic spell without act
 ELSE reading_hint END  -- leave any days beyond 79 unchanged
 
 WHERE quest_id = (
-  SELECT id FROM quests WHERE title = 'Luke-Acts: The Gospel Unleashed' LIMIT 1
+  SELECT id FROM quests WHERE title ILIKE '%luke%acts%gospel%unleashed%' LIMIT 1
 )
 AND day_number BETWEEN 1 AND 79;
