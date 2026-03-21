@@ -28,6 +28,7 @@ interface DayRow {
   day_number: number
   passage_reference: string
   passage_text: string
+  reading_hint: string
   is_milestone: boolean
   milestone_note: string
   collapsed: boolean // UI-only
@@ -103,6 +104,7 @@ export function QuestBuilder() {
         day_number: d.day_number,
         passage_reference: d.passage_reference ?? '',
         passage_text: d.passage_text ?? '',
+        reading_hint: d.reading_hint ?? '',
         is_milestone: d.is_milestone,
         milestone_note: d.milestone_note ?? '',
         collapsed: true,
@@ -236,6 +238,7 @@ export function QuestBuilder() {
           day_number: i,
           passage_reference: '',
           passage_text: '',
+          reading_hint: '',
           is_milestone: false,
           milestone_note: '',
           collapsed: true,
@@ -265,6 +268,7 @@ export function QuestBuilder() {
       day_number: d.day_number,
       passage_reference: d.passage_reference.trim() || null,
       passage_text: d.passage_text.trim() || null,
+      reading_hint: d.reading_hint.trim() || null,
       is_milestone: d.is_milestone,
       milestone_note: d.is_milestone ? d.milestone_note.trim() || null : null,
     }))
@@ -596,6 +600,17 @@ function DailyReadingsManager({
                     onChange={(e) => onUpdateDay(idx, 'passage_text', e.target.value)}
                     placeholder="Full passage text..."
                   />
+                  <div>
+                    <Textarea
+                      label="Reading Hint (optional)"
+                      value={day.reading_hint}
+                      onChange={(e) => onUpdateDay(idx, 'reading_hint', e.target.value)}
+                      placeholder="A short question or tip to help students engage. 1-2 sentences."
+                    />
+                    <p className="text-xs text-tq-text-muted mt-1 tabular-nums">
+                      {day.reading_hint.length}/200
+                    </p>
+                  </div>
                   {day.is_milestone && (
                     <Input
                       label="Milestone Note"

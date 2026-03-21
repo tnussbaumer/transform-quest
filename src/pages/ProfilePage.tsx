@@ -13,6 +13,7 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { XPProgressBar } from '../components/ui/XPProgressBar'
 import { AvatarLightbox } from '../components/ui/AvatarLightbox'
+import { BibleReadingGuide } from '../components/reading/BibleReadingGuide'
 import {
   isPushSupported,
   getNotificationPermission,
@@ -27,6 +28,7 @@ export function ProfilePage() {
   const { allBadges, earnedBadges } = useBadges()
   const [editingAvatar, setEditingAvatar] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [guideOpen, setGuideOpen] = useState(false)
 
   // Notification settings state
   const [notifEnabled, setNotifEnabled] = useState(false)
@@ -265,14 +267,25 @@ export function ProfilePage() {
         <h2 className="text-xs font-bold uppercase tracking-widest text-tq-text-muted mb-3">
           Settings
         </h2>
-        <Button
-          variant="danger"
-          fullWidth
-          onClick={signOut}
-        >
-          Sign Out
-        </Button>
+        <div className="space-y-3">
+          <button
+            onClick={() => setGuideOpen(true)}
+            className="w-full bg-tq-surface rounded-xl p-4 border border-tq-border/50 text-left hover:bg-tq-surface-2 transition-colors flex items-center gap-3 min-h-[44px]"
+          >
+            <span className="text-lg">📖</span>
+            <span className="text-sm font-semibold text-tq-text">How to Read the Bible</span>
+          </button>
+          <Button
+            variant="danger"
+            fullWidth
+            onClick={signOut}
+          >
+            Sign Out
+          </Button>
+        </div>
       </section>
+
+      <BibleReadingGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       <div className="h-4" />
     </div>
