@@ -224,9 +224,15 @@ export function ReadingFlowPage() {
                 streakCount={celebrationStreak}
                 fullWidth
               />
-              <Button fullWidth onClick={() => navigate('/', { replace: true })}>
-                Back to Home
+              <Button fullWidth onClick={() => navigate('/quests?showJourney=1', { replace: true })}>
+                See Your Journey
               </Button>
+              <button
+                onClick={() => navigate('/', { replace: true })}
+                className="w-full text-center text-tq-text-muted text-sm font-semibold py-2"
+              >
+                Back to Home
+              </button>
             </div>
           </div>
         </div>

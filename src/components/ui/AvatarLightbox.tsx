@@ -1,12 +1,22 @@
 import { useEffect, useState } from 'react'
 import { Flame } from 'lucide-react'
-import { Avatar } from '../profile/Avatar'
+
+const PRESET_AVATARS: Record<string, { emoji: string; bg: string }> = {
+  lion:     { emoji: '🦁', bg: 'from-[#E09800] to-[#FFB830]' },
+  eagle:    { emoji: '🦅', bg: 'from-[#009B82] to-[#00C9A7]' },
+  flame:    { emoji: '🔥', bg: 'from-[#FF6B35] to-[#FFB830]' },
+  shield:   { emoji: '🛡️', bg: 'from-[#7340E0] to-[#8B5CF6]' },
+  mountain: { emoji: '⛰️', bg: 'from-[#009B82] to-[#00C9A7]/80' },
+  star:     { emoji: '⭐', bg: 'from-[#FFB830] to-[#FFD470]' },
+  compass:  { emoji: '🧭', bg: 'from-[#00C9A7] to-[#33FFD4]' },
+  crown:    { emoji: '👑', bg: 'from-[#8B5CF6] to-[#A78BFA]' },
+}
 
 interface LightboxUser {
   display_name: string
-  avatar_url: string | null
-  avatar_type: 'preset' | 'custom'
-  avatar_preset: string
+  avatar_url?: string | null
+  avatar_type?: 'preset' | 'custom'
+  avatar_preset?: string
   level_title?: string
   current_streak?: number
 }
@@ -16,12 +26,15 @@ interface AvatarLightboxProps {
   onClose: () => void
 }
 
+function getInitials(name: string): string {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+}
+
 export function AvatarLightbox({ user, onClose }: AvatarLightboxProps) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
     if (user) {
-      // Trigger entrance animation on next frame
       requestAnimationFrame(() => setVisible(true))
     } else {
       setVisible(false)
@@ -32,8 +45,15 @@ export function AvatarLightbox({ user, onClose }: AvatarLightboxProps) {
 
   function handleClose() {
     setVisible(false)
-    setTimeout(onClose, 150) // wait for exit animation
+    setTimeout(onClose, 150)
   }
+
+  // Render the large avatar directly (not via Avatar component)
+  // to control object-fit properly at 200px
+  const preset = user.avatar_preset && user.avatar_preset !== 'default'
+    ? PRESET_AVATARS[user.avatar_preset]
+    : null
+  const isCustomPhoto = user.avatar_type === 'custom' && user.avatar_url
 
   return (
     <div
@@ -55,13 +75,25 @@ export function AvatarLightbox({ user, onClose }: AvatarLightboxProps) {
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Large avatar */}
-        <div className="rounded-full border-[3px] border-white/80 glow-purple overflow-hidden">
-          <Avatar
-            profile={user}
-            size="lg"
-            className="!w-[200px] !h-[200px] !text-6xl"
-          />
+        {/* Large avatar — rendered inline for proper cropping */}
+        <div className="w-[200px] h-[200px] rounded-full border-[3px] border-white/80 glow-purple overflow-hidden flex-shrink-0">
+          {isCustomPhoto ? (
+            <img
+              src={user.avatar_url!}
+              alt={user.display_name}
+              className="w-full h-full object-cover object-center"
+            />
+          ) : preset ? (
+            <div className={`w-full h-full bg-gradient-to-br ${preset.bg} flex items-center justify-center`}>
+              <span className="text-7xl">{preset.emoji}</span>
+            </div>
+          ) : (
+            <div className="w-full h-full bg-tq-purple flex items-center justify-center">
+              <span className="text-6xl font-extrabold text-white">
+                {getInitials(user.display_name)}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Name */}

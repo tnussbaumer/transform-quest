@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { Compass, ChevronDown, ChevronUp, Trophy } from 'lucide-react'
 import { useQuestHistory } from '../hooks/useQuestHistory'
 import { useQuest } from '../hooks/useQuest'
@@ -13,6 +13,7 @@ export function QuestsPage() {
   const { dayNumber } = useQuest()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
 
   const [expandedMaps, setExpandedMaps] = useState<Set<string>>(new Set())
 
@@ -20,6 +21,14 @@ export function QuestsPage() {
   useEffect(() => {
     refetch()
   }, [location.key]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-expand journey map when arriving from reading flow with ?showJourney=1
+  useEffect(() => {
+    if (searchParams.get('showJourney') === '1' && activeQuests.length > 0 && !loading) {
+      const firstQuestId = activeQuests[0].id
+      setExpandedMaps(new Set([firstQuestId]))
+    }
+  }, [searchParams, activeQuests, loading])
 
   function toggleMap(questId: string) {
     setExpandedMaps(prev => {
