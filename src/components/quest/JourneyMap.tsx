@@ -105,7 +105,9 @@ export default function JourneyMap({
 
   // Travel animation state
   const [travelPos, setTravelPos] = useState<{ x: number; y: number } | null>(null)
+  const [travelTrail, setTravelTrail] = useState<{ x: number; y: number; id: number }[]>([])
   const [showBurst, setShowBurst] = useState<number | null>(null) // index of burst node
+  const trailIdRef = useRef(0)
 
   // Find where completed path ends (for gradient split)
   const lastCompletedIndex = useMemo(() => {
@@ -168,6 +170,15 @@ export default function JourneyMap({
       const pos = interpolateNodes(fromIdx, toIdx, Math.min(t, 1))
       setTravelPos(pos)
 
+      // Emit trail spark every ~80ms
+      if (rawT < 1 && elapsed % 80 < 20) {
+        const sparkId = trailIdRef.current++
+        // Offset spark slightly randomly from center
+        const ox = (Math.random() - 0.5) * 12
+        const oy = (Math.random() - 0.5) * 12
+        setTravelTrail(prev => [...prev.slice(-8), { x: pos.x + ox, y: pos.y + oy, id: sparkId }])
+      }
+
       if (rawT < 1) {
         rafId = requestAnimationFrame(step)
       } else {
@@ -175,6 +186,7 @@ export default function JourneyMap({
         setShowBurst(toIdx)
         setTimeout(() => {
           setTravelPos(null)
+          setTravelTrail([])
           setShowBurst(null)
         }, 800)
       }
@@ -429,6 +441,29 @@ export default function JourneyMap({
                 )}
               </div>
             </div>
+          )
+        })}
+
+        {/* Trail sparks behind traveling avatar */}
+        {travelTrail.map((spark, i) => {
+          const age = (travelTrail.length - i) / travelTrail.length
+          return (
+            <div
+              key={spark.id}
+              className="absolute pointer-events-none rounded-full"
+              style={{
+                left: spark.x - 3,
+                top: spark.y - 3,
+                width: 6,
+                height: 6,
+                background: age > 0.5
+                  ? `rgba(0, 201, 167, ${0.7 * (1 - age)})`
+                  : `rgba(255, 184, 48, ${0.7 * (1 - age)})`,
+                boxShadow: `0 0 ${4 + age * 4}px ${age > 0.5 ? 'rgba(0,201,167,0.4)' : 'rgba(255,184,48,0.4)'}`,
+                transform: `scale(${1 - age * 0.5})`,
+                transition: 'opacity 300ms',
+              }}
+            />
           )
         })}
 
