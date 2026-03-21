@@ -76,12 +76,12 @@ export function AvatarLightbox({ user, onClose }: AvatarLightboxProps) {
         onClick={e => e.stopPropagation()}
       >
         {/* Large avatar — rendered inline for proper cropping */}
-        <div className="w-[200px] h-[200px] rounded-full border-[3px] border-white/80 glow-purple overflow-hidden flex-shrink-0">
+        <div className="w-[200px] h-[200px] rounded-full border-[3px] border-white/80 glow-purple overflow-hidden flex-shrink-0 bg-tq-surface">
           {isCustomPhoto ? (
             <img
               src={user.avatar_url!}
               alt={user.display_name}
-              className="w-full h-full object-cover object-center"
+              className="w-[200px] h-[200px] object-cover object-center"
             />
           ) : preset ? (
             <div className={`w-full h-full bg-gradient-to-br ${preset.bg} flex items-center justify-center`}>

@@ -44,7 +44,7 @@ export function Avatar({ profile, size = 'md', className = '', onTap }: AvatarPr
         <img
           src={profile.avatar_url}
           alt={profile.display_name}
-          className="w-full h-full object-cover object-top"
+          className="w-full h-full object-cover object-center"
         />
       </div>
     )
