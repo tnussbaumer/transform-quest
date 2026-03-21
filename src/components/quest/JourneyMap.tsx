@@ -225,6 +225,9 @@ export default function JourneyMap({
           const isToday = status === 'today-done' || status === 'today-pending'
           const isPast = status === 'completed' || status === 'today-done'
           const isClickable = status === 'today-pending'
+          // "Next unread" = first future node that isn't today-pending
+          const isNextUnread = status === 'future' && i > 0 &&
+            getNodeStatus(questDays[i - 1], completedDayIds, todayDayNumber) !== 'future'
           const pos = getNodeCenter(i)
 
           const size = isToday ? NODE_SIZE_TODAY : isMilestone ? NODE_SIZE_MILESTONE : NODE_SIZE
@@ -262,7 +265,10 @@ export default function JourneyMap({
                   status === 'today-pending'
                     ? 'bg-gradient-to-br from-tq-gold to-tq-gold-dark shadow-xl shadow-tq-gold/40 ring-[3px] ring-tq-gold/30 animate-gold-pulse'
                     : '',
-                  status === 'future'
+                  status === 'future' && isNextUnread
+                    ? 'bg-tq-surface-2 border-2 border-tq-teal/50 animate-next-node-pulse'
+                    : '',
+                  status === 'future' && !isNextUnread
                     ? 'bg-tq-surface-2 border-2 border-tq-border/40'
                     : '',
                 ].join(' ')}

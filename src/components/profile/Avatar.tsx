@@ -26,18 +26,20 @@ interface AvatarProps {
   }
   size?: 'sm' | 'md' | 'lg'
   className?: string
+  onTap?: () => void
 }
 
 function getInitials(name: string): string {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
-export function Avatar({ profile, size = 'md', className = '' }: AvatarProps) {
+export function Avatar({ profile, size = 'md', className = '', onTap }: AvatarProps) {
   const s = SIZE_MAP[size]
 
-  // Custom uploaded photo
+  let content: React.ReactNode
+
   if (profile.avatar_type === 'custom' && profile.avatar_url) {
-    return (
+    content = (
       <div className={`${s.container} rounded-full overflow-hidden flex-shrink-0 border-2 border-tq-border ${className}`}>
         <img
           src={profile.avatar_url}
@@ -46,33 +48,41 @@ export function Avatar({ profile, size = 'md', className = '' }: AvatarProps) {
         />
       </div>
     )
+  } else {
+    const preset = profile.avatar_preset && profile.avatar_preset !== 'default'
+      ? PRESET_AVATARS[profile.avatar_preset]
+      : null
+
+    if (preset) {
+      content = (
+        <div
+          className={`${s.container} rounded-full bg-gradient-to-br ${preset.bg} flex items-center justify-center flex-shrink-0 border-2 border-white/10 ${className}`}
+          aria-label={`${profile.display_name}'s avatar`}
+        >
+          <span className={s.emoji}>{preset.emoji}</span>
+        </div>
+      )
+    } else {
+      content = (
+        <div
+          className={`${s.container} rounded-full bg-tq-purple flex items-center justify-center flex-shrink-0 border-2 border-tq-border ${className}`}
+          aria-label={`${profile.display_name}'s avatar`}
+        >
+          <span className={`${s.initials} font-extrabold text-white`}>
+            {getInitials(profile.display_name)}
+          </span>
+        </div>
+      )
+    }
   }
 
-  // Preset avatar
-  const preset = profile.avatar_preset && profile.avatar_preset !== 'default'
-    ? PRESET_AVATARS[profile.avatar_preset]
-    : null
-
-  if (preset) {
+  if (onTap) {
     return (
-      <div
-        className={`${s.container} rounded-full bg-gradient-to-br ${preset.bg} flex items-center justify-center flex-shrink-0 border-2 border-white/10 ${className}`}
-        aria-label={`${profile.display_name}'s avatar`}
-      >
-        <span className={s.emoji}>{preset.emoji}</span>
-      </div>
+      <button type="button" onClick={onTap} className="cursor-pointer">
+        {content}
+      </button>
     )
   }
 
-  // Fallback: initials
-  return (
-    <div
-      className={`${s.container} rounded-full bg-tq-purple flex items-center justify-center flex-shrink-0 border-2 border-tq-border ${className}`}
-      aria-label={`${profile.display_name}'s avatar`}
-    >
-      <span className={`${s.initials} font-extrabold text-white`}>
-        {getInitials(profile.display_name)}
-      </span>
-    </div>
-  )
+  return <>{content}</>
 }

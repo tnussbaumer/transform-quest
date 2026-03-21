@@ -6,6 +6,7 @@ import { useQuest } from '../hooks/useQuest'
 import { useProfile } from '../hooks/useProfile'
 import { useFriends } from '../hooks/useFriends'
 import { useStreakFreeze } from '../hooks/useStreakFreeze'
+import { hasUnlock } from '../lib/cosmeticUnlocks'
 import { supabase } from '../lib/supabase'
 import { TodaysReadingCard } from '../components/home/TodaysReadingCard'
 import { WeeklyStreakBar } from '../components/home/WeeklyStreakBar'
@@ -14,6 +15,8 @@ import { FriendActivitySnippet } from '../components/home/FriendActivitySnippet'
 import { AnnouncementBanner } from '../components/home/AnnouncementBanner'
 import { NotificationPrompt } from '../components/home/NotificationPrompt'
 import { InstallBanner } from '../components/home/InstallBanner'
+import { AnimatedFlame } from '../components/ui/AnimatedFlame'
+import { XPProgressBar } from '../components/ui/XPProgressBar'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 
@@ -29,6 +32,7 @@ export function HomePage() {
   const displayName = profile?.display_name ?? 'friend'
   const streak = fullProfile?.current_streak ?? profile?.current_streak ?? 0
   const totalXp = fullProfile?.total_xp ?? profile?.total_xp ?? 0
+  const showAnimatedFlame = profile ? hasUnlock(profile, 'animated_flame') : false
 
   const [completedTodayIds, setCompletedTodayIds] = useState<Set<string>>(new Set())
 
@@ -77,7 +81,11 @@ export function HomePage() {
             </button>
           )}
           <div className="flex items-center gap-1.5 bg-tq-surface rounded-xl px-3 py-2 border border-tq-border/50">
-            <Flame size={20} className="text-tq-gold animate-fire-pulse" aria-hidden="true" />
+            {showAnimatedFlame ? (
+              <AnimatedFlame size={20} />
+            ) : (
+              <Flame size={20} className={`text-tq-gold ${streak > 0 ? 'animate-fire-pulse' : ''}`} aria-hidden="true" />
+            )}
             <span className="text-lg font-extrabold text-tq-gold tabular-nums">{streak}</span>
           </div>
         </div>
@@ -182,6 +190,15 @@ export function HomePage() {
             dayNumber={dayNumber}
             totalDays={totalDays}
           />
+        </div>
+      )}
+
+      {/* XP Progress Bar */}
+      {!loading && (
+        <div className="animate-fade-up" style={{ animationDelay: '300ms' }}>
+          <Card>
+            <XPProgressBar totalXp={totalXp} />
+          </Card>
         </div>
       )}
 

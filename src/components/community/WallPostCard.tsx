@@ -36,12 +36,22 @@ export function WallPostCard({ post, onToggleReaction, onDelete, index }: WallPo
   const [expanded, setExpanded] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [reactionBusy, setReactionBusy] = useState(false)
+  const [bouncingReaction, setBouncingReaction] = useState<string | null>(null)
+  const [floatingReaction, setFloatingReaction] = useState<string | null>(null)
 
   function handleReaction(postId: string, type: string) {
     if (reactionBusy) return
     setReactionBusy(true)
+    const wasActive = post.my_reactions.includes(type)
     onToggleReaction(postId, type)
-    // Debounce: prevent rapid double-taps for 400ms
+    // Bounce animation
+    setBouncingReaction(type)
+    setTimeout(() => setBouncingReaction(null), 200)
+    // +1 float for new reactions
+    if (!wasActive) {
+      setFloatingReaction(type)
+      setTimeout(() => setFloatingReaction(null), 600)
+    }
     setTimeout(() => setReactionBusy(false), 400)
   }
 
@@ -155,7 +165,12 @@ export function WallPostCard({ post, onToggleReaction, onDelete, index }: WallPo
                 ].join(' ')}
                 aria-label={`${r.type} reaction${isActive ? ' (active)' : ''}`}
               >
-                <span>{r.emoji}</span>
+                <span className={`relative ${bouncingReaction === r.type ? 'animate-emoji-bounce' : ''}`}>
+                  {r.emoji}
+                  {floatingReaction === r.type && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold text-tq-teal animate-plus-one pointer-events-none">+1</span>
+                  )}
+                </span>
                 {count > 0 && <span>{count}</span>}
               </button>
             )
