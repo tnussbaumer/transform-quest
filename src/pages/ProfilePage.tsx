@@ -159,7 +159,7 @@ export function ProfilePage() {
           Badges
         </h2>
         <Card>
-          <BadgesGrid allBadges={allBadges} earnedBadges={earnedBadges} />
+          <BadgesGrid allBadges={allBadges} earnedBadges={earnedBadges} currentStreak={profile.current_streak} />
         </Card>
       </section>
 
