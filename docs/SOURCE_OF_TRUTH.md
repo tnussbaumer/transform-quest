@@ -2,7 +2,7 @@
 
 > **This is the living reference document for the project.** Update it whenever the app's state meaningfully changes. Use it to orient any new Claude session, onboard collaborators, or remind yourself where things stand.
 
-*Last updated: March 20, 2026 — Phase 5 in progress (Launch Readiness). Build passing (~471KB JS, 36KB CSS). Deployed on Vercel.*
+*Last updated: March 21, 2026 — Phase 5B complete (Polish & Delight). Build passing (~478KB JS, 40KB CSS). Deployed on Vercel.*
 
 ---
 
@@ -78,40 +78,50 @@ A gamified daily Bible reading PWA for Transform Church youth (ages 11–18) in 
 - [x] Wall posts (reflections + thoughts), 4 emoji reactions, ComposeModal
 - [x] ShareStep in reading flow, share XP (+15/day), admin moderation
 
-### 🔧 Phase 5 — Launch Readiness (IN PROGRESS)
-`npm run build` → ~471KB JS, 36KB CSS, custom service worker with push handler.
+### ✅ Phase 5 — Launch Readiness (COMPLETE)
+- [x] Push notification client infrastructure, custom service worker (injectManifest), VAPID key handling
+- [x] Install detection hook + install banner (iOS Safari, Android, non-Safari warning)
+- [x] Notification prompt + profile settings (toggle + time picker)
+- [x] QR code invites, `/add/:inviteCode` route, invite-code gate for controlled rollout
+- [x] Route-level code splitting with React.lazy + Suspense
+- [x] Supabase Edge Functions: `send-push-notification` (RFC 8291) + `daily-reminder-cron` (pg_cron)
+- [x] Nudge push notifications, button debouncing, reaction debouncing
+- [x] Quest day timezone fix (local date parsing), nudge timezone fix (Central Time)
+- [x] `complete_reading` RPC fix (migration 011): per-quest-day duplicate check, `PERFORM check_and_award_badges`
+- [x] Error visibility: reading flow shows actual RPC error instead of fake celebration
+- [x] Nudge timezone fix (migration 012): `send_nudge` uses Central Time for "today" check
 
-**Completed:**
-- [x] **Push notification client infrastructure**: `subscribeToPush()`, `unsubscribeFromPush()`, VAPID key handling, `savePushSubscription()` → saves to `profiles.push_subscription`
-- [x] **Custom service worker** (`src/sw.ts`): Push event listener + notification click handler. Switched from `generateSW` to `injectManifest` mode in vite.config.ts
-- [x] **Install detection hook** (`useInstallPrompt.ts`): PWA install detection, `beforeinstallprompt` capture, visit tracking
-- [x] **Install banner** (`InstallBanner.tsx`): Platform-specific instructions for iOS Safari, Android Chrome, non-Safari iOS warning
-- [x] **Notification prompt** (`NotificationPrompt.tsx`): Shows on Home screen after 2+ completions when running as installed PWA (or Android)
-- [x] **Notification settings on Profile**: Toggle + time picker for daily reminders
-- [x] **QR code invites** (`QRCodeModal.tsx`): QR code encoding invite URL, share/copy buttons, shown in Community → Friends tab
-- [x] **Invite link handler** (`AddFriendPage.tsx`): `/add/:inviteCode` route — auto-sends friend request, handles auth redirect with `returnTo`
-- [x] **Invite-code gate** on AuthPage: `VITE_LAUNCH_CODE` env var gates sign-in for controlled rollout
-- [x] **Non-Safari iOS warning**: Detects Chrome/Instagram/Facebook in-app browsers on iOS, shows "Open in Safari" prompt
-- [x] **Route-level code splitting**: `React.lazy()` for AdminPage, ReadingFlowPage, CommunityPage, QuestsPage, AddFriendPage with brand-styled Suspense fallback
-- [x] **Supabase Edge Functions**: `send-push-notification` (RFC 8291 encrypted Web Push) + `daily-reminder-cron` (15-min schedule via pg_cron)
-- [x] **Nudge push notifications**: `sendNudgePush()` fires Edge Function after successful nudge
-- [x] **Button debouncing**: PendingRequests accept/decline, QuestionStep finish, AddFriendSection add — all use `loading` prop
-- [x] **Reaction debouncing**: 400ms guard on WallPostCard reaction buttons
-- [x] **Session expiry handling**: `fetchProfile` gracefully handles errors
-- [x] **Long content overflow**: Profile display name truncated with `max-w-[280px]`
-- [x] **Quest day calculation fixes**: Local date parsing (no UTC mismatch), dynamic totalDays cap (not hardcoded 30)
-- [x] **Nudge timezone fix**: `fetchTodaysNudges` uses UTC midnight to match `send_nudge` RPC
-- [x] **`complete_reading` RPC fix** (migration 011): Duplicate check changed from calendar-day to per-quest-day. Re-completions update answers without double XP. Streak maintained when completing multiple quest days same day. Fixed `check_and_award_badges` call (PERFORM, not assign — function returns VOID)
-- [x] **Error visibility**: Reading flow shows actual RPC error message instead of silently faking success
+### ✅ Phase 5B — Polish & Delight (COMPLETE)
+`npm run build` → ~478KB JS, 40KB CSS.
 
-**Not yet working / in progress:**
-- [ ] Push notification delivery (Edge Function deployed but notifications not confirmed arriving on iOS)
-- [ ] Daily reminder cron (pg_cron scheduled, Edge Function deployed, not yet tested end-to-end)
+- [x] **Cosmetic unlock system** (`cosmeticUnlocks.ts`): Pure logic utility for future cosmetic checks
+- [x] **Level thresholds** (`levels.ts`): Client-side XP → level mapping with progress calculation
+- [x] **Count-up animation hook** (`useCountUp.ts`): RAF-based with easing, respects prefers-reduced-motion
+- [x] **Animated CSS flame** (`AnimatedFlame.tsx`): 3-layer teardrop flame, unlocked at 3+ streak
+- [x] **XP progress bar** (`XPProgressBar.tsx`): Gradient fill with level labels, animates on mount. Replaces old ProfileHeader inline bar.
+- [x] **Home screen polish**: Avatar in header (tappable → lightbox), safe area padding for notch, count-up stats, streak dot pop-in, flame pulse when streak > 0
+- [x] **Avatar lightbox** (`AvatarLightbox.tsx`): Full-screen modal with scale animation. Wired into Home header, FriendCard, WallPostCard, ProfilePage
+- [x] **Avatar lightbox cropping fix**: Lightbox renders image directly with `object-center` (not `object-top`) for proper face centering at 200px
+- [x] **Reaction emoji bounce**: Emoji scales 1→1.4→1 on tap, "+1" floats up for new reactions
+- [x] **Badge reveal card flip** (`BadgeRevealCard.tsx`): 3D rotateY flip from mystery "?" to badge, staggered 400ms per badge
+- [x] **Journey map pulsing next-node ring**: First unread node has continuous teal pulse animation
+- [x] **Journey map travel animation**: Avatar travels along winding path with golden trail sparks on Quests page (sessionStorage-based detection, fires once per completion)
+- [x] **Journey map avatar resting**: Avatar stays on last completed node after animation and on revisit
+- [x] **Inline journey animation step** (`JourneyAnimationStep.tsx`): Mini map animation plays automatically between Celebrate and Share steps in reading flow — no button needed
+- [x] **Reading flow step order updated**: Passage → Q1 → Q2 → Q3 → Celebrate → Journey → Share → Friends → Done
+- [x] **Badges section redesign** (`BadgesGrid.tsx`): Collapsed by default — earned badges first, "Up Next" preview (4 badges), expandable "See all" toggle with rotating chevron
+- [x] **Admin back button**: Visible teal "← Home" button with safe area padding for notch
+- [x] **CSS keyframes added**: dot-pop, emoji-bounce, plus-one-float, card-flip, ring-burst, next-node-pulse, flame-sway (3 layers)
+
+**Not yet confirmed working:**
+- [ ] Push notification delivery to iOS (Edge Function deployed, subscription saves, delivery unconfirmed)
+- [ ] Daily reminder cron (pg_cron scheduled, not tested end-to-end)
 
 **Not built (deferred):**
 - [ ] Offline reading / advanced SW caching
 - [ ] Group/team system
 - [ ] Photo crop/drag tool for avatar uploads
+- [ ] Avatar upload guidelines / resize tool for better cropping
 
 ---
 
@@ -187,7 +197,7 @@ transform-quest/
 │
 ├── supabase/
 │   ├── migrations/
-│   │   ├── 001_schema.sql through 011_fix_complete_reading_duplicate_check.sql
+│   │   ├── 001_schema.sql through 012_fix_nudge_timezone.sql
 │   ├── functions/
 │   │   ├── send-push-notification/index.ts  ← Edge Function: RFC 8291 Web Push
 │   │   └── daily-reminder-cron/index.ts     ← Edge Function: scheduled reminders
@@ -206,6 +216,8 @@ transform-quest/
 │   │   ├── supabase.ts              ← createClient() — untyped, explicit casts
 │   │   ├── pushNotifications.ts     ← subscribe/unsubscribe, VAPID, permission checks
 │   │   ├── sendNudgePush.ts         ← Fire-and-forget nudge push via Edge Function
+│   │   ├── cosmeticUnlocks.ts       ← Pure logic for cosmetic unlock checks
+│   │   ├── levels.ts                ← XP level thresholds + progress calculation
 │   │   ├── calculateXp.ts, levelUtils.ts, streakUtils.ts
 │   │
 │   ├── hooks/
@@ -213,32 +225,36 @@ transform-quest/
 │   │   ├── useQuest.ts              ← Quest day calculation (local date parsing)
 │   │   ├── useCompletion.ts
 │   │   ├── useInstallPrompt.ts      ← PWA install detection + banner logic
+│   │   ├── useCountUp.ts            ← RAF-based count-up animation hook
 │   │   ├── useCommunityFeed.ts, useProfile.ts, useFriends.ts
-│   │   ├── useNudge.ts             ← UTC-based nudge tracking + push trigger
+│   │   ├── useNudge.ts             ← Local-time nudge tracking + push trigger
 │   │   ├── useBadges.ts, useQuestHistory.ts, useAdminStats.ts, useStreakFreeze.ts
 │   │
 │   ├── pages/
 │   │   ├── AuthPage.tsx             ← Invite-code gate + non-Safari iOS warning + returnTo
 │   │   ├── AddFriendPage.tsx        ← /add/:inviteCode handler (lazy-loaded)
-│   │   ├── HomePage.tsx             ← + InstallBanner + NotificationPrompt
-│   │   ├── ProfilePage.tsx          ← + Notification settings (toggle + time picker)
-│   │   ├── ReadingFlowPage.tsx      ← Error display on RPC failure (lazy-loaded)
+│   │   ├── HomePage.tsx             ← Avatar + lightbox, AnimatedFlame, XPProgressBar, notch-safe header
+│   │   ├── ProfilePage.tsx          ← XPProgressBar, notification settings, avatar lightbox
+│   │   ├── ReadingFlowPage.tsx      ← 9-step flow incl. JourneyAnimationStep (lazy-loaded)
 │   │   ├── CommunityPage.tsx, QuestsPage.tsx, AdminPage.tsx (lazy-loaded)
 │   │   ├── OnboardingPage.tsx, FriendsPage.tsx
 │   │
 │   └── components/
-│       ├── ui/                      Button, Card, Input, Textarea
+│       ├── ui/                      Button, Card, Input, Textarea, AnimatedFlame,
+│       │                            XPProgressBar, AvatarLightbox
 │       ├── layout/                  Layout, BottomNav, ProtectedRoute, AdminRoute
-│       ├── home/                    TodaysReadingCard, WeeklyStreakBar, QuickStatsRow,
-│       │                            FriendActivitySnippet, AnnouncementBanner,
-│       │                            NotificationPrompt, InstallBanner
-│       ├── reading/                 PassageStep, QuestionStep, CelebrationStep,
-│       │                            ProgressDots, FriendStreaksStep, ShareButton, ShareStep
-│       ├── quest/                   ActiveQuestCard, JourneyMap
+│       ├── home/                    TodaysReadingCard, WeeklyStreakBar (dot pop-in),
+│       │                            QuickStatsRow (count-up), FriendActivitySnippet,
+│       │                            AnnouncementBanner, NotificationPrompt, InstallBanner
+│       ├── reading/                 PassageStep, QuestionStep, CelebrationStep (badge flip),
+│       │                            JourneyAnimationStep, ProgressDots, FriendStreaksStep,
+│       │                            ShareButton, ShareStep
+│       ├── celebration/             BadgeRevealCard
+│       ├── quest/                   ActiveQuestCard, JourneyMap (travel animation + avatar rest)
 │       ├── profile/                 ProfileHeader, StatsGrid, StreakCalendar,
-│       │                            BadgesGrid, BadgeCircle, Avatar, AvatarPicker
-│       ├── friends/                 FriendCard, FriendsList, PendingRequests, AddFriendSection
-│       ├── community/               WallPostCard, ComposeModal, FriendsTab, QRCodeModal
+│       │                            BadgesGrid (collapsible), BadgeCircle, Avatar (onTap), AvatarPicker
+│       ├── friends/                 FriendCard (avatar lightbox), FriendsList, PendingRequests, AddFriendSection
+│       ├── community/               WallPostCard (emoji bounce + avatar lightbox), ComposeModal, FriendsTab, QRCodeModal
 │       └── admin/                   QuestBuilder, EngagementDashboard, AnnouncementsManager
 │
 ├── tsconfig.json, tsconfig.app.json, tsconfig.node.json, tsconfig.sw.json
@@ -264,7 +280,7 @@ All tables live in `public` schema. Run migrations 001–011 in order.
 | `generate_invite_code()` | — | Returns random 8-char uppercase string |
 | `complete_reading(quest_day_id, answer_1-3, xp_earned)` | DEFINER | Atomic: insert completion + update streak/XP/level. **Per-quest-day duplicate check** (not calendar-day). Re-completion updates answers only (no double XP). Uses `PERFORM check_and_award_badges()` (VOID return). Returns JSON `{new_streak, new_xp, new_level, new_badges, xp_earned, milestone_bonus, quest_complete, freeze_earned}` |
 | `check_and_award_badges(user_id)` | DEFINER | Evaluates all badge conditions + awards streak XP bonuses. **Returns VOID** (not JSONB) |
-| `send_nudge(to_user_id, quest_day_id)` | DEFINER | Inserts nudge (max 1/day per pair, UTC-based), triggers badge check |
+| `send_nudge(to_user_id, quest_day_id)` | DEFINER | Inserts nudge (max 1/day per pair, **Central Time**-based via migration 012), triggers badge check |
 | `update_mutual_streaks(user_id)` | DEFINER | Increments or resets mutual_streak for all accepted friendships |
 | `use_streak_freeze()` | DEFINER | Uses one freeze if streak is about to break |
 | `get_wall_feed(quest_day_id)` | DEFINER | Returns wall posts with author profile, answers, reactions, visibility filtering |
@@ -294,13 +310,13 @@ All tables live in `public` schema. Run migrations 001–011 in order.
 | `/auth` | AuthPage | Public | Magic link + Google + invite-code gate |
 | `/add/:inviteCode` | AddFriendPage | Public* | Redirects to auth if not logged in |
 | `/onboarding` | OnboardingPage | Protected | 2-step: name → avatar |
-| `/` | HomePage | Protected | + InstallBanner + NotificationPrompt |
+| `/` | HomePage | Protected | Avatar + lightbox, InstallBanner, NotificationPrompt, XPProgressBar |
 | `/quests` | QuestsPage | Protected | Lazy-loaded |
 | `/community` | CommunityPage | Protected | Lazy-loaded |
 | `/friends` | — | Protected | Redirects to `/community` |
-| `/profile` | ProfilePage | Protected | + Notification settings |
-| `/read/:questDayId` | ReadingFlowPage | Protected | Lazy-loaded |
-| `/admin` | AdminPage | Leader/Admin | Lazy-loaded |
+| `/profile` | ProfilePage | Protected | XPProgressBar, notification settings, avatar lightbox |
+| `/read/:questDayId` | ReadingFlowPage | Protected | 9-step flow with journey animation (lazy-loaded) |
+| `/admin` | AdminPage | Leader/Admin | Lazy-loaded, "← Home" back button |
 | `/*` | — | — | Redirects to `/` |
 
 ---
@@ -328,7 +344,7 @@ Mounted at top of App.tsx above BrowserRouter. Do NOT revert to plain hook.
 `useQuest.ts` parses `start_date` as local date parts (`new Date(year, month-1, day)`) to avoid UTC-vs-local mismatch. The day number is clamped to `1..totalDays` (not hardcoded 30).
 
 ### Nudge timezone alignment
-`fetchTodaysNudges` uses UTC midnight (`Date.UTC()`) to match the `send_nudge` RPC's `date_trunc('day', NOW() AT TIME ZONE 'UTC')`.
+Both client (`fetchTodaysNudges` uses local midnight) and server (`send_nudge` uses `America/Chicago` via migration 012) define "today" as the user's **local calendar day** in Central Time. Previously both used UTC which caused nudges sent after 6 PM CT to persist into the next local day.
 
 ### complete_reading RPC — critical details
 - Duplicate check is **per quest_day_id** (not per calendar day). Migration 011.
@@ -355,6 +371,26 @@ VITE_LAUNCH_CODE=TRANSFORM2026  # empty = no gate
 VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
 # SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are auto-injected
 ```
+
+### Reading flow — 9 steps
+The reading flow order is: Passage → Q1 → Q2 → Q3 → Celebrate (confetti) → **Journey** (inline avatar travel animation) → Share → Friends → Done. The Journey step (`JourneyAnimationStep.tsx`) shows a mini map with the avatar traveling from the previous day's node to the current day's node with golden trail sparks. It auto-advances to Share after ~3 seconds.
+
+### Journey Map animations
+- **Travel animation**: Detects new completions via `sessionStorage` key `tq-journey-last-completed-count`. Fires once per completion. Avatar interpolates along cubic bezier path with golden spark trail. Respects `prefers-reduced-motion`.
+- **Avatar resting**: After travel animation (or on revisit), user's avatar stays visible on the last completed node with a gold ring.
+- **Next-node pulse**: First unread future node has a continuous teal pulsing ring (`animate-next-node-pulse`).
+
+### Cosmetic unlock system
+`cosmeticUnlocks.ts` provides `hasUnlock(profile, 'animated_flame')` — checks `current_streak >= 3 || longest_streak >= 3`. The animated flame replaces the static Lucide Flame icon in the Home header when unlocked.
+
+### Avatar lightbox
+`AvatarLightbox.tsx` renders the image directly (not via Avatar component) to use `object-center` instead of `object-top` for proper face centering at 200px. Wired into Home header, FriendCard, WallPostCard, and ProfilePage.
+
+### Safe area / notch handling
+Home header and Admin header use `paddingTop: 'max(16px, env(safe-area-inset-top, 16px))'` or `env(safe-area-inset-top)` to clear the iPhone notch/Dynamic Island.
+
+### All Phase 5B animations (CSS-only, no libraries)
+Defined in `src/index.css`: dot-pop, emoji-bounce, plus-one-float, ring-burst, next-node-pulse, flame-sway (3 layers). All gated with `@media (prefers-reduced-motion: reduce)`. Count-up uses `requestAnimationFrame` in `useCountUp.ts`.
 
 ---
 
