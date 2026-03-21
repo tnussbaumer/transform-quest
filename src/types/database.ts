@@ -31,6 +31,7 @@ export interface Quest {
   badge_name: string | null
   badge_icon: string | null
   is_active: boolean
+  hints_enabled: boolean
   created_at: string
 }
 
