@@ -191,6 +191,8 @@ export function ReadingFlowPage() {
           dayNumber={dayNumber}
           answers={answers}
           newBadges={newBadges}
+          longestStreak={profile?.longest_streak ?? 0}
+          passagesRead={dayNumber}
           onContinue={handleCelebrationContinue}
         />
       )}

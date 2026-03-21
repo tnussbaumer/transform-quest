@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Flame } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import { Button } from '../ui/Button'
 import { ShareButton } from './ShareButton'
 import { BadgeRevealCard } from '../celebration/BadgeRevealCard'
+import { getStreakEncouragement } from '../../lib/streakEncouragement'
 import type { QuestDay, NewBadge } from '../../types/database'
 
 interface CelebrationStepProps {
@@ -13,6 +14,8 @@ interface CelebrationStepProps {
   dayNumber: number
   answers: { a1: string; a2: string; a3: string }
   newBadges: NewBadge[]
+  longestStreak?: number
+  passagesRead?: number
   onContinue: () => void
 }
 
@@ -25,12 +28,21 @@ export function CelebrationStep({
   dayNumber,
   answers,
   newBadges,
+  longestStreak = 0,
+  passagesRead = 0,
   onContinue,
 }: CelebrationStepProps) {
   const [displayStreak, setDisplayStreak] = useState(Math.max(streak - 1, 0))
   const [streakBouncing, setStreakBouncing] = useState(false)
   const [xpAnimating, setXpAnimating] = useState(false)
   const isMilestone = questDay?.is_milestone ?? false
+
+  // Streak just reset — show encouragement
+  const streakReset = streak === 1 && longestStreak > 1
+  const encouragement = useMemo(
+    () => streakReset ? getStreakEncouragement(longestStreak, passagesRead) : null,
+    [streakReset, longestStreak, passagesRead]
+  )
 
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -109,6 +121,13 @@ export function CelebrationStep({
           </div>
           <p className="text-2xl font-extrabold text-tq-gold">day streak!</p>
         </div>
+
+        {/* Streak reset encouragement */}
+        {encouragement && (
+          <p className="text-tq-text-sec text-sm text-center leading-relaxed max-w-[260px] mx-auto animate-fade-up" style={{ animationDelay: '400ms' }}>
+            {encouragement}
+          </p>
+        )}
 
         {/* XP fly-up + static card */}
         <div className="relative">
