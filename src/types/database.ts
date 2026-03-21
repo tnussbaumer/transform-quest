@@ -42,6 +42,7 @@ export interface QuestDay {
   passage_text: string | null
   is_milestone: boolean
   milestone_note: string | null
+  reading_hint: string | null
 }
 
 export interface Completion {

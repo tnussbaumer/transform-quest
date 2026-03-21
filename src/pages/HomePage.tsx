@@ -19,6 +19,7 @@ import { NotificationPrompt } from '../components/home/NotificationPrompt'
 import { InstallBanner } from '../components/home/InstallBanner'
 import { AnimatedFlame } from '../components/ui/AnimatedFlame'
 import { XPProgressBar } from '../components/ui/XPProgressBar'
+import { BibleReadingGuide } from '../components/reading/BibleReadingGuide'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 
@@ -38,6 +39,7 @@ export function HomePage() {
 
   const [completedTodayIds, setCompletedTodayIds] = useState<Set<string>>(new Set())
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [guideOpen, setGuideOpen] = useState(false)
 
   // Fetch who completed today's quest day (for friend activity snippet)
   useEffect(() => {
@@ -192,6 +194,18 @@ export function HomePage() {
         </div>
       )}
 
+      {/* How to Read the Bible link */}
+      {quest && (
+        <div className="flex justify-center -mt-2 animate-fade-up" style={{ animationDelay: '100ms' }}>
+          <button
+            onClick={() => setGuideOpen(true)}
+            className="text-tq-text-muted text-xs font-semibold hover:text-tq-teal transition-colors py-1 flex items-center gap-1"
+          >
+            📖 How to Read the Bible
+          </button>
+        </div>
+      )}
+
       {/* Weekly Streak Bar */}
       <div className="animate-fade-up" style={{ animationDelay: '150ms' }}>
         <Card>
@@ -230,6 +244,8 @@ export function HomePage() {
       <div className="animate-fade-up" style={{ animationDelay: '350ms' }}>
         <FriendActivitySnippet friends={friends} completedTodayIds={completedTodayIds} />
       </div>
+
+      <BibleReadingGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
     </div>
   )
 }
