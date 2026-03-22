@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, Zap } from 'lucide-react'
+import { ChevronDown, Zap, Share2 } from 'lucide-react'
 import { Card } from '../ui/Card'
 import type { JournalEntry } from '../../types/database'
 
@@ -16,6 +16,34 @@ function formatDate(dateStr: string): string {
     day: 'numeric',
     year: 'numeric',
   })
+}
+
+async function shareEntry(entry: JournalEntry) {
+  const qd = entry.quest_days
+  const passage = qd?.passage_reference ?? 'Today\'s reading'
+  const date = formatDate(entry.completed_at)
+  const text = [
+    `📖 ${passage} — ${date}`,
+    '',
+    `What does this say?`,
+    entry.answer_1,
+    '',
+    `How does this apply?`,
+    entry.answer_2,
+    '',
+    `What will I do?`,
+    entry.answer_3,
+    '',
+    '— from Transform Quest',
+  ].join('\n')
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ text })
+    } catch { /* user cancelled */ }
+  } else {
+    await navigator.clipboard.writeText(text)
+  }
 }
 
 function JournalCard({ entry, index }: { entry: JournalEntry; index: number }) {
@@ -54,10 +82,20 @@ function JournalCard({ entry, index }: { entry: JournalEntry; index: number }) {
             ))}
           </div>
 
-          {/* XP */}
-          <div className="flex items-center gap-1 pt-1">
-            <Zap size={12} className="text-tq-gold" />
-            <span className="text-xs font-bold text-tq-gold">+{entry.xp_earned} XP</span>
+          {/* Footer: XP + Share */}
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center gap-1">
+              <Zap size={12} className="text-tq-gold" />
+              <span className="text-xs font-bold text-tq-gold">+{entry.xp_earned} XP</span>
+            </div>
+            <button
+              onClick={() => shareEntry(entry)}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-tq-text-muted hover:text-tq-teal hover:bg-tq-surface-2 transition-colors min-h-[32px]"
+              aria-label="Share this journal entry"
+            >
+              <Share2 size={12} />
+              Share
+            </button>
           </div>
         </div>
       </Card>
