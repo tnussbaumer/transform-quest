@@ -21,16 +21,9 @@ const REACTIONS: { type: string; emoji: string }[] = [
   { type: 'me_too', emoji: '🤝' },
 ]
 
-function timeAgo(dateStr: string): string {
-  const now = Date.now()
-  const then = new Date(dateStr).getTime()
-  const diffMs = now - then
-  const mins = Math.floor(diffMs / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
+function formatPostTime(dateStr: string): string {
+  const date = new Date(dateStr)
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
 }
 
 export function WallPostCard({ post, onToggleReaction, onDelete, index }: WallPostCardProps) {
@@ -89,7 +82,7 @@ export function WallPostCard({ post, onToggleReaction, onDelete, index }: WallPo
             ) : (
               <Globe size={12} className="text-tq-text-muted" />
             )}
-            <span className="text-xs text-tq-text-muted">{timeAgo(post.created_at)}</span>
+            <span className="text-xs text-tq-text-muted">{formatPostTime(post.created_at)}</span>
             {post.is_mine && (
               confirmingDelete ? (
                 <div className="flex items-center gap-1">
