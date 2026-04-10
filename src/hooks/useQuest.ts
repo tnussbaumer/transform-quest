@@ -70,7 +70,38 @@ export function useQuest(): QuestState {
         const totalDayCount = days?.length ?? 0
         setTotalDays(totalDayCount)
 
-        const currentDay = Math.max(1, Math.min(diffDays + 1, totalDayCount))
+        // Calendar-based max day (how far along the quest is by date)
+        const calendarDay = Math.max(1, Math.min(diffDays + 1, totalDayCount))
+
+        const { data: { user } } = await supabase.auth.getUser()
+
+        let currentDay = calendarDay
+        const completedQuestDayIds = new Set<string>()
+
+        if (user && days && days.length > 0) {
+          // Fetch user's completions for this quest to find their actual progress
+          const dayIds = days.map(d => d.id)
+          const { data: completions } = await supabase
+            .from('completions')
+            .select('quest_day_id')
+            .eq('user_id', user.id)
+            .in('quest_day_id', dayIds)
+
+          for (const c of ((completions ?? []) as { quest_day_id: string }[])) {
+            completedQuestDayIds.add(c.quest_day_id)
+          }
+
+          // Show the first uncompleted day within the calendar range,
+          // so users can't skip ahead but also don't get forced past missed days
+          const firstUncompleted = days
+            .filter(d => d.day_number <= calendarDay && !completedQuestDayIds.has(d.id))
+            .sort((a, b) => a.day_number - b.day_number)[0]
+
+          if (firstUncompleted) {
+            currentDay = firstUncompleted.day_number
+          }
+          // If all days up to calendarDay are completed, keep calendarDay (shows as done)
+        }
 
         setDayNumber(currentDay)
 
@@ -78,18 +109,9 @@ export function useQuest(): QuestState {
         const todayDay = days?.find(d => d.day_number === currentDay) ?? null
         setQuestDay(todayDay)
 
-        // Check completion in the SAME async flow — no race condition
+        // Check completion using the set we already built (avoids extra query)
         if (todayDay) {
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user) {
-            const { data: completion } = await supabase
-              .from('completions')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('quest_day_id', todayDay.id)
-              .maybeSingle()
-            setIsCurrentDayCompleted(!!completion)
-          }
+          setIsCurrentDayCompleted(completedQuestDayIds.has(todayDay.id))
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load quest')
