@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Flame, Compass, Snowflake, Shield } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useQuest } from '../hooks/useQuest'
@@ -26,11 +26,17 @@ import { Button } from '../components/ui/Button'
 
 export function HomePage() {
   const { profile } = useAuth()
-  const { quest, questDay, dayNumber, totalDays, isCurrentDayCompleted, loading: questLoading } = useQuest()
+  const { quest, questDay, dayNumber, totalDays, isCurrentDayCompleted, loading: questLoading, refetch } = useQuest()
   const { completions, profile: fullProfile } = useProfile()
   const { friends } = useFriends()
   const { needsFreeze, freezesAvailable, useFreeze, dismiss } = useStreakFreeze()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Refetch quest data when navigating back to this page (e.g. after completing a reading)
+  useEffect(() => {
+    refetch()
+  }, [location.key]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isAdmin = profile?.role === 'leader' || profile?.role === 'admin'
   const displayName = profile?.display_name ?? 'friend'

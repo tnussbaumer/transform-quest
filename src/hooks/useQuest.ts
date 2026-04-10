@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import type { Quest, QuestDay } from '../types/database'
 
@@ -10,6 +10,7 @@ interface QuestState {
   isCurrentDayCompleted: boolean
   loading: boolean
   error: string | null
+  refetch: () => Promise<void>
 }
 
 export function useQuest(): QuestState {
@@ -21,8 +22,7 @@ export function useQuest(): QuestState {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function load() {
+  const load = useCallback(async () => {
       setLoading(true)
       setError(null)
       try {
@@ -118,10 +118,11 @@ export function useQuest(): QuestState {
       } finally {
         setLoading(false)
       }
-    }
-
-    load()
   }, [])
 
-  return { quest, questDay, dayNumber, totalDays, isCurrentDayCompleted, loading, error }
+  useEffect(() => {
+    load()
+  }, [load])
+
+  return { quest, questDay, dayNumber, totalDays, isCurrentDayCompleted, loading, error, refetch: load }
 }
